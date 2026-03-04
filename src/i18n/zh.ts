@@ -93,4 +93,4 @@ export const zh = {
     tagline: "在愚行被习以为常之前，把它们记录下来。",
     copy: "若智学刊 I.D.I.O.T. — 全部内容基于 CC BY 4.0",
   },
-} as const;
+};
