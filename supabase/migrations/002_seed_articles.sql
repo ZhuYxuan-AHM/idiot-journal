@@ -17,7 +17,7 @@ VALUES
   '通过14个组织、18个月的田野调查，我们记录了现代职场中技术迷信仪式的兴起。43.7%的受访员工承认在关键数字操作前执行仪式性行为，包括口头咒语和对无生命软件的情感谈判。',
   'techno-superstition, workplace ritual, digital animism',
   'N/A', 'published',
-  'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=340&fit=crop'
+  null
 ),
 (
   'a0000001-0001-0001-0001-000000000002',
@@ -31,7 +31,7 @@ VALUES
   '我们证明了在MMLU上达90%的LLM在标准格式之外的基础逻辑推理上持续失败，揭示了系统性的「基准过拟合」现象。',
   'benchmark gaming, MMLU, reasoning failure',
   'GPT-4o, Gemini 1.5', 'published',
-  'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=340&fit=crop'
+  null
 ),
 (
   'a0000001-0001-0001-0001-000000000003',
@@ -45,7 +45,7 @@ VALUES
   '分析了2023-2025年500家加AI名的创业公司，73.2%核心产品未变，平均估值提升340%，实际AI集成仅为ChatGPT API包装。提出AI洗涤指数(AWI)。',
   'AI washing, startup culture, valuation bubble',
   'N/A', 'published',
-  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=340&fit=crop'
+  null
 ),
 (
   'a0000001-0001-0001-0001-000000000004',
@@ -59,7 +59,7 @@ VALUES
   '访谈87名世界500强中层管理者，追溯单篇病毒博客如何触发全组织AI指令。61%的CEO除原文外未获任何技术简报。命名为「高管博客文综合征(EBPS)」。',
   'executive decision-making, AI mandate, organizational irrationality',
   'N/A', 'published',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=340&fit=crop'
+  null
 ),
 (
   'a0000001-0001-0001-0001-000000000005',
@@ -73,5 +73,5 @@ VALUES
   '借鉴海德格尔、埃吕尔和庄子，提出理解技术能力增强与批判性判断下降相关性的哲学框架。我们认为这是人与技术关系的结构性特征。',
   'philosophy of technology, hubris, Zhuangzi, critical theory',
   'N/A', 'published',
-  'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600&h=340&fit=crop'
+  null
 );
