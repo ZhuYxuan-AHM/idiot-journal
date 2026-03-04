@@ -8,6 +8,8 @@ import { NavBar } from "@/components/layout/NavBar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/layout/AuthModal";
 import { SocialBar } from "@/components/articles/SocialBar";
+import { CommentSection } from "@/components/articles/CommentSection";
+import { InteractiveRating } from "@/components/articles/InteractiveRating";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { LevelBar } from "@/components/profile/LevelBar";
@@ -24,7 +26,7 @@ export default function App() {
   const [markdown, setMarkdown] = useState("");
   const [copied, setCopied] = useState(false);
   const [submitMsg, setSubmitMsg] = useState("");
-  const [_selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
   const t = useT(lang);
   const { user, signIn, signUp, signOut } = useAuth();
@@ -106,6 +108,82 @@ export default function App() {
     );
   }
 
+  /* ═══════════════ ARTICLE DETAIL PAGE ═══════════════ */
+  if (page === "article-detail" && selectedArticle) {
+    const a = selectedArticle;
+    return (
+      <div style={{ minHeight: "100vh" }}>
+        <AuthModal t={t} mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onRegister={handleRegister} />
+        <NavBar {...navProps} />
+        <div style={{ paddingTop: 80 }} className="ctr">
+          <a className="nl" style={{ display: "inline-block", marginTop: 40, marginBottom: 32 }}
+            onClick={() => { setPage("articles"); setSelectedArticle(null); }}>
+            {t.articles.backToList}
+          </a>
+
+          {a.img && <div style={{ width: "100%", height: 280, background: `linear-gradient(to bottom, transparent 50%, rgba(10,10,12,0.95)), url(${a.img})`, backgroundSize: "cover", backgroundPosition: "center", marginBottom: 32 }} />}
+
+          <div style={{ display: "inline-block", background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", padding: "3px 12px", fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1, marginBottom: 16 }}>
+            {a.classification}
+          </div>
+
+          <h1 style={{ fontSize: 32, fontWeight: 500, lineHeight: 1.35, marginBottom: 12 }}>
+            {isZh ? a.title_zh : a.title_en}
+          </h1>
+          {isZh && <h2 style={{ fontSize: 20, fontWeight: 300, color: "var(--text-muted)", marginBottom: 16 }}>{a.title_en}</h2>}
+          {!isZh && a.title_zh && <h2 style={{ fontSize: 20, fontWeight: 300, color: "var(--text-muted)", marginBottom: 16, fontFamily: "var(--serif-cn)" }}>{a.title_zh}</h2>}
+
+          <div style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 4 }}>{a.authors}</div>
+          <div style={{ fontSize: 13, color: "var(--text-faint)", fontStyle: "italic", marginBottom: 20 }}>{a.affiliation}</div>
+
+          <div style={{ display: "flex", gap: 20, fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginBottom: 32 }}>
+            {a.model !== "N/A" && <span>{t.articles.model}: {a.model}</span>}
+            <span>{t.articles.vol} {a.vol}, {t.articles.iss} {a.issue}</span>
+            <span>{a.date}</span>
+          </div>
+
+          <SocialBar article={a} t={t.articles} onShare={() => trackShare(a.id)} />
+
+          {/* Abstract */}
+          <div style={{ marginTop: 40, background: "rgba(212,175,55,0.03)", border: "1px solid rgba(212,175,55,0.12)", padding: "28px 32px" }}>
+            <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+              {t.articles.abstract}
+            </div>
+            <p style={{ fontSize: 16, lineHeight: 2, color: "var(--text-dim)" }}>
+              {isZh ? a.abstract_zh : a.abstract_en}
+            </p>
+            {isZh && <p style={{ fontSize: 14, lineHeight: 1.9, color: "var(--text-faint)", marginTop: 16, fontStyle: "italic" }}>{a.abstract_en}</p>}
+          </div>
+
+          {a.keywords && (
+            <div style={{ marginTop: 16, fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>
+              {t.articles.keywords}: {a.keywords}
+            </div>
+          )}
+
+          {/* Interactive Rating */}
+          <InteractiveRating
+            articleId={a.id}
+            user={user}
+            t={t}
+            onLoginRequired={() => setAuthMode("login")}
+          />
+
+          {/* Comments */}
+          <CommentSection
+            articleId={a.id}
+            user={user}
+            t={t}
+            onLoginRequired={() => setAuthMode("login")}
+          />
+
+          <div style={{ height: 80 }} />
+        </div>
+        <Footer t={t} />
+      </div>
+    );
+  }
+
   /* ═══════════════ ARTICLES PAGE ═══════════════ */
   if (page === "articles") {
     return (
@@ -118,7 +196,7 @@ export default function App() {
           <p style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--text-faint)", marginBottom: 48, letterSpacing: 1 }}>{t.articles.coverNote}</p>
 
           {featured && (
-            <div style={{ border: "1px solid rgba(212,175,55,0.2)", background: "rgba(212,175,55,0.03)", marginBottom: 48, cursor: "pointer", overflow: "hidden" }} onClick={() => setSelectedArticle(featured)}>
+            <div style={{ border: "1px solid rgba(212,175,55,0.2)", background: "rgba(212,175,55,0.03)", marginBottom: 48, cursor: "pointer", overflow: "hidden" }} onClick={() => { setSelectedArticle(featured); setPage("article-detail"); window.scrollTo({ top: 0 }); }}>
               {featured.img && <div style={{ width: "100%", height: 240, background: `linear-gradient(to bottom, transparent 60%, rgba(10,10,12,0.95)), url(${featured.img})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
               <div style={{ padding: "32px 44px 40px" }}>
                 <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{t.articles.featured}</div>
@@ -139,7 +217,7 @@ export default function App() {
           <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--text-faint)", textTransform: "uppercase", marginBottom: 24 }}>{t.articles.latest}</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 80 }}>
             {others.map((a) => (
-              <div key={a.id} className="article-card" style={{ padding: 0, overflow: "hidden" }} onClick={() => setSelectedArticle(a)}>
+              <div key={a.id} className="article-card" style={{ padding: 0, overflow: "hidden" }} onClick={() => { setSelectedArticle(a); setPage("article-detail"); window.scrollTo({ top: 0 }); }}>
                 <div style={{ display: "flex", minHeight: 180 }}>
                   {a.img && <div style={{ width: 220, minHeight: "100%", flexShrink: 0, background: `url(${a.img})`, backgroundSize: "cover", backgroundPosition: "center", borderRight: "1px solid var(--border)" }} />}
                   <div style={{ flex: 1, padding: "24px 28px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
