@@ -11,40 +11,58 @@ export function useArticles() {
     if (!isLive || !supabase) return;
     setLoading(true);
 
-    supabase
-      .from("articles")
-      .select("*, article_stats(*)")
-      .eq("status", "published")
-      .order("published_at", { ascending: false })
-      .then(({ data }) => {
-        if (data?.length) {
-          setArticles(
-            data.map((d: any) => ({
-              id: d.id,
-              vol: d.vol,
-              issue: d.issue,
-              featured: d.featured,
-              date: d.published_at,
-              classification: d.classification,
-              title_en: d.title_en,
-              title_zh: d.title_zh,
-              authors: d.authors,
-              affiliation: d.affiliation,
-              abstract_en: d.abstract_en,
-              abstract_zh: d.abstract_zh,
-              keywords: d.keywords,
-              model: d.model_examined,
-              status: d.status,
-              img: d.cover_url ?? "",
-              shares: d.article_stats?.[0]?.share_count ?? 0,
-              comments: d.article_stats?.[0]?.comment_count ?? 0,
-              rating: d.article_stats?.[0]?.avg_rating ?? 0,
-              ratings: d.article_stats?.[0]?.rating_count ?? 0,
-            }))
-          );
-        }
+    (async () => {
+      const { data: arts } = await supabase
+        .from("articles")
+        .select("*")
+        .eq("status", "published")
+        .order("published_at", { ascending: false });
+
+      if (!arts?.length) {
         setLoading(false);
+        return;
+      }
+
+      const ids = arts.map((a: any) => a.id);
+
+      const [{ data: commentCounts }, { data: ratingData }, { data: shareCounts }] = await Promise.all([
+        supabase.from("comments").select("article_id").in("article_id", ids),
+        supabase.from("ratings").select("article_id, score").in("article_id", ids),
+        supabase.from("shares").select("article_id").in("article_id", ids),
+      ]);
+
+      const cMap = new Map<string, number>();
+      (commentCounts ?? []).forEach((c: any) => cMap.set(c.article_id, (cMap.get(c.article_id) ?? 0) + 1));
+
+      const rMap = new Map<string, { sum: number; count: number }>();
+      (ratingData ?? []).forEach((r: any) => {
+        const prev = rMap.get(r.article_id) ?? { sum: 0, count: 0 };
+        rMap.set(r.article_id, { sum: prev.sum + r.score, count: prev.count + 1 });
       });
+
+      const sMap = new Map<string, number>();
+      (shareCounts ?? []).forEach((s: any) => sMap.set(s.article_id, (sMap.get(s.article_id) ?? 0) + 1));
+
+      setArticles(
+        arts.map((d: any) => {
+          const r = rMap.get(d.id);
+          return {
+            id: d.id, vol: d.vol, issue: d.issue, featured: d.featured,
+            date: d.published_at, classification: d.classification,
+            title_en: d.title_en, title_zh: d.title_zh,
+            authors: d.authors, affiliation: d.affiliation,
+            abstract_en: d.abstract_en, abstract_zh: d.abstract_zh,
+            keywords: d.keywords, model: d.model_examined,
+            status: d.status, img: d.cover_url ?? "",
+            shares: sMap.get(d.id) ?? 0,
+            comments: cMap.get(d.id) ?? 0,
+            rating: r ? +(r.sum / r.count).toFixed(1) : 0,
+            ratings: r?.count ?? 0,
+          };
+        })
+      );
+      setLoading(false);
+    })();
   }, []);
 
   const trackShare = async (articleId: string) => {
