@@ -12,7 +12,7 @@ export const DEMO_ARTICLES: Article[] = [
     abstract_zh: "\u901a\u8fc714\u4e2a\u7ec4\u7ec7\u300118\u4e2a\u6708\u7684\u7530\u91ce\u8c03\u67e5\uff0c\u6211\u4eec\u8bb0\u5f55\u4e86\u73b0\u4ee3\u804c\u573a\u4e2d\u6280\u672f\u8ff7\u4fe1\u4eea\u5f0f\u7684\u5174\u8d77\u300243.7%\u7684\u53d7\u8bbf\u5458\u5de5\u627f\u8ba4\u5728\u5173\u952e\u6570\u5b57\u64cd\u4f5c\u524d\u6267\u884c\u4eea\u5f0f\u6027\u884c\u4e3a\uff0c\u5305\u62ec\u53e3\u5934\u5492\u8bed\u548c\u5bf9\u65e0\u751f\u547d\u8f6f\u4ef6\u7684\u60c5\u611f\u8c08\u5224\u3002",
     keywords: "techno-superstition, workplace ritual, digital animism",
     model: "N/A", status: "published",
-    img: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=340&fit=crop",
+    img: "",
     shares: 847, comments: 63, rating: 4.7, ratings: 128,
   },
   {
@@ -26,7 +26,7 @@ export const DEMO_ARTICLES: Article[] = [
     abstract_zh: "\u6211\u4eec\u8bc1\u660e\u4e86\u5728MMLU\u4e0a\u8fbe90%\u7684LLM\u5728\u6807\u51c6\u683c\u5f0f\u4e4b\u5916\u7684\u57fa\u7840\u903b\u8f91\u63a8\u7406\u4e0a\u6301\u7eed\u5931\u8d25\uff0c\u63ed\u793a\u4e86\u7cfb\u7edf\u6027\u7684\u300e\u57fa\u51c6\u8fc7\u62df\u5408\u300f\u73b0\u8c61\u3002",
     keywords: "benchmark gaming, MMLU, reasoning failure",
     model: "GPT-4o, Gemini 1.5", status: "published",
-    img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=340&fit=crop",
+    img: "",
     shares: 612, comments: 45, rating: 4.5, ratings: 97,
   },
   {
@@ -40,7 +40,7 @@ export const DEMO_ARTICLES: Article[] = [
     abstract_zh: "\u5206\u6790\u4e862023-2025\u5e74500\u5bb6\u52a0AI\u540d\u7684\u521b\u4e1a\u516c\u53f8\uff0c73.2%\u6838\u5fc3\u4ea7\u54c1\u672a\u53d8\uff0c\u5e73\u5747\u4f30\u503c\u63d0\u5347340%\uff0c\u5b9e\u9645AI\u96c6\u6210\u4ec5\u4e3aChatGPT API\u5305\u88c5\u3002\u63d0\u51faAI\u6d17\u6da4\u6307\u6570(AWI)\u3002",
     keywords: "AI washing, startup culture, valuation bubble",
     model: "N/A", status: "published",
-    img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=340&fit=crop",
+    img: "",
     shares: 1203, comments: 89, rating: 4.9, ratings: 215,
   },
   {
@@ -54,7 +54,7 @@ export const DEMO_ARTICLES: Article[] = [
     abstract_zh: "\u8bbf\u8c0887\u540d\u4e16\u754c500\u5f3b\u4e2d\u5c42\u7ba1\u7406\u8005\uff0c\u8ffd\u6eaf\u5355\u7bc7\u75c5\u6bd2\u535a\u5ba2\u5982\u4f55\u89e6\u53d1\u5168\u7ec4\u7ec7AI\u6307\u4ee4\u300261%\u7684CEO\u9664\u539f\u6587\u5916\u672a\u83b7\u4efb\u4f55\u6280\u672f\u7b80\u62a5\u3002\u547d\u540d\u4e3a\u300e\u9ad8\u7ba1\u535a\u5ba2\u6587\u7efc\u5408\u5f81(EBPS)\u300f\u3002",
     keywords: "executive decision-making, AI mandate, organizational irrationality",
     model: "N/A", status: "published",
-    img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=340&fit=crop",
+    img: "",
     shares: 934, comments: 71, rating: 4.6, ratings: 156,
   },
   {
@@ -68,7 +68,7 @@ export const DEMO_ARTICLES: Article[] = [
     abstract_zh: "\u501f\u9274\u6d77\u5fb7\u683c\u5c14\u3001\u57c3\u5415\u5c14\u548c\u5e84\u5b50\uff0c\u63d0\u51fa\u7406\u89e3\u6280\u672f\u80fd\u529b\u589e\u5f3a\u4e0e\u6279\u5224\u6027\u5224\u65ad\u4e0b\u964d\u76f8\u5173\u6027\u7684\u54f2\u5b66\u6846\u67b6\u3002\u6211\u4eec\u8ba4\u4e3a\u8fd9\u662f\u4eba\u4e0e\u6280\u672f\u5173\u7cfb\u7684\u7ed3\u6784\u6027\u7279\u5f81\u3002",
     keywords: "philosophy of technology, hubris, Zhuangzi, critical theory",
     model: "N/A", status: "published",
-    img: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600&h=340&fit=crop",
+    img: "",
     shares: 521, comments: 37, rating: 4.8, ratings: 83,
   },
 ];
