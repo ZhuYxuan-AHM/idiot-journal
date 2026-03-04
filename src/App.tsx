@@ -43,7 +43,7 @@ export default function App() {
   const goTo = (id: string) => { setPage("home"); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 100); };
   const handleCopy = () => { navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const handlePdf = () => window.print();
-const handleSubmitPaper = async () => {
+  const handleSubmitPaper = async () => {
     if (!user) { setSubmitMsg(t.preview.loginFirst); return; }
     if (!markdown.trim() || markdown.trim().length < 100) {
       setSubmitMsg("Paper content is too short. Please write at least 100 characters.");
@@ -75,11 +75,12 @@ const handleSubmitPaper = async () => {
     const { error } = await signUp(email, password, meta);
     return { error: error ? (typeof error === "string" ? error : (error as any).message ?? "Registration failed") : null };
   };
-  
+
   const navProps = {
     t, lang, setLang, userName: user?.name.split(" ")[0],
     onNavigate: (p: string) => { setPage(p); window.scrollTo({ top: 0 }); },
     onScrollTo: goTo, onLogin: () => setAuthMode("login"),
+    onLogout: signOut,
   };
 
   const featured = articles.find((a) => a.featured);
@@ -134,74 +135,70 @@ const handleSubmitPaper = async () => {
     );
   }
 
-  /* ═══════════════ ARTICLE DETAIL PAGE ═══════════════ */
+  /* ═══════════════ ARTICLE DETAIL PAGE (Preprint Style) ═══════════════ */
   if (page === "article-detail" && selectedArticle) {
     const a = selectedArticle;
     return (
       <div style={{ minHeight: "100vh" }}>
         <AuthModal t={t} mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onRegister={handleRegister} />
         <NavBar {...navProps} />
-        <div style={{ paddingTop: 80 }} className="ctr">
-          <a className="nl" style={{ display: "inline-block", marginTop: 40, marginBottom: 32 }}
+        <div style={{ paddingTop: 80, maxWidth: 800, margin: "0 auto", padding: "80px 24px 0" }}>
+          <a className="nl" style={{ display: "inline-block", marginTop: 20, marginBottom: 32 }}
             onClick={() => { setPage("articles"); setSelectedArticle(null); }}>
             {t.articles.backToList}
           </a>
 
-          {a.img && <div style={{ width: "100%", height: 280, background: `linear-gradient(to bottom, transparent 50%, rgba(10,10,12,0.95)), url(${a.img})`, backgroundSize: "cover", backgroundPosition: "center", marginBottom: 32 }} />}
-
-          <div style={{ display: "inline-block", background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", padding: "3px 12px", fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1, marginBottom: 16 }}>
-            {a.classification}
+          {/* Preprint header bar */}
+          <div style={{ background: "rgba(212,175,55,0.04)", border: "1px solid rgba(212,175,55,0.15)", padding: "16px 24px", marginBottom: 40, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }} className="preprint-meta">
+            <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--gold)", letterSpacing: 2 }}>I.D.I.O.T. PREPRINT</span>
+              <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{t.articles.vol} {a.vol}, {t.articles.iss} {a.issue}</span>
+              <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{a.date}</span>
+            </div>
+            <div style={{ display: "inline-block", background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", padding: "2px 10px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1 }}>
+              {a.classification}
+            </div>
           </div>
 
-          <h1 style={{ fontSize: 32, fontWeight: 500, lineHeight: 1.35, marginBottom: 12 }}>
+          {/* Title */}
+          <h1 style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.4, marginBottom: 8 }}>
             {isZh ? a.title_zh : a.title_en}
           </h1>
-          {isZh && <h2 style={{ fontSize: 20, fontWeight: 300, color: "var(--text-muted)", marginBottom: 16 }}>{a.title_en}</h2>}
-          {!isZh && a.title_zh && <h2 style={{ fontSize: 20, fontWeight: 300, color: "var(--text-muted)", marginBottom: 16, fontFamily: "var(--serif-cn)" }}>{a.title_zh}</h2>}
+          {isZh && a.title_en && <h2 style={{ fontSize: 18, fontWeight: 300, color: "var(--text-muted)", marginBottom: 12, fontStyle: "italic" }}>{a.title_en}</h2>}
+          {!isZh && a.title_zh && <h2 style={{ fontSize: 18, fontWeight: 300, color: "var(--text-muted)", marginBottom: 12, fontFamily: "var(--serif-cn)" }}>{a.title_zh}</h2>}
 
-          <div style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 4 }}>{a.authors}</div>
-          <div style={{ fontSize: 13, color: "var(--text-faint)", fontStyle: "italic", marginBottom: 20 }}>{a.affiliation}</div>
+          {/* Authors */}
+          <div style={{ fontSize: 16, color: "var(--text-dim)", marginBottom: 4, fontWeight: 500 }}>{a.authors}</div>
+          <div style={{ fontSize: 13, color: "var(--text-faint)", fontStyle: "italic", marginBottom: 8 }}>{a.affiliation}</div>
+          {a.model !== "N/A" && (
+            <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginBottom: 8 }}>{t.articles.model}: {a.model}</div>
+          )}
 
-          <div style={{ display: "flex", gap: 20, fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginBottom: 32 }}>
-            {a.model !== "N/A" && <span>{t.articles.model}: {a.model}</span>}
-            <span>{t.articles.vol} {a.vol}, {t.articles.iss} {a.issue}</span>
-            <span>{a.date}</span>
-          </div>
-
-          <SocialBar article={a} t={t.articles} onShare={() => trackShare(a.id)} />
+          <div style={{ height: 1, background: "var(--border)", margin: "24px 0" }} />
 
           {/* Abstract */}
-          <div style={{ marginTop: 40, background: "rgba(212,175,55,0.03)", border: "1px solid rgba(212,175,55,0.12)", padding: "28px 32px" }}>
-            <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ fontSize: 13, fontFamily: "var(--mono)", fontWeight: 600, color: "var(--text-dim)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
               {t.articles.abstract}
             </div>
-            <p style={{ fontSize: 16, lineHeight: 2, color: "var(--text-dim)" }}>
+            <p style={{ fontSize: 15.5, lineHeight: 2, color: "var(--text-dim)", textAlign: "justify" }}>
               {isZh ? a.abstract_zh : a.abstract_en}
             </p>
             {isZh && <p style={{ fontSize: 14, lineHeight: 1.9, color: "var(--text-faint)", marginTop: 16, fontStyle: "italic" }}>{a.abstract_en}</p>}
           </div>
 
           {a.keywords && (
-            <div style={{ marginTop: 16, fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>
-              {t.articles.keywords}: {a.keywords}
+            <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginBottom: 32 }}>
+              <span style={{ fontWeight: 600, color: "var(--text-faint)" }}>{t.articles.keywords}:</span> {a.keywords}
             </div>
           )}
 
-          {/* Interactive Rating */}
-          <InteractiveRating
-            articleId={a.id}
-            user={user}
-            t={t}
-            onLoginRequired={() => setAuthMode("login")}
-          />
+          <div style={{ height: 1, background: "var(--border)", margin: "8px 0 32px" }} />
 
-          {/* Comments */}
-          <CommentSection
-            articleId={a.id}
-            user={user}
-            t={t}
-            onLoginRequired={() => setAuthMode("login")}
-          />
+          <SocialBar article={a} t={t.articles} onShare={() => trackShare(a.id)} />
+
+          <InteractiveRating articleId={a.id} user={user} t={t} onLoginRequired={() => setAuthMode("login")} />
+          <CommentSection articleId={a.id} user={user} t={t} onLoginRequired={() => setAuthMode("login")} />
 
           <div style={{ height: 80 }} />
         </div>
@@ -223,7 +220,6 @@ const handleSubmitPaper = async () => {
 
           {featured && (
             <div style={{ border: "1px solid rgba(212,175,55,0.2)", background: "rgba(212,175,55,0.03)", marginBottom: 48, cursor: "pointer", overflow: "hidden" }} onClick={() => { setSelectedArticle(featured); setPage("article-detail"); window.scrollTo({ top: 0 }); }}>
-              {featured.img && <div style={{ width: "100%", height: 240, background: `linear-gradient(to bottom, transparent 60%, rgba(10,10,12,0.95)), url(${featured.img})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
               <div style={{ padding: "32px 44px 40px" }}>
                 <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{t.articles.featured}</div>
                 <div style={{ display: "inline-block", background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", padding: "2px 10px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1, marginBottom: 12 }}>{featured.classification}</div>
@@ -243,22 +239,15 @@ const handleSubmitPaper = async () => {
           <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--text-faint)", textTransform: "uppercase", marginBottom: 24 }}>{t.articles.latest}</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 80 }}>
             {others.map((a) => (
-              <div key={a.id} className="article-card" style={{ padding: 0, overflow: "hidden" }} onClick={() => { setSelectedArticle(a); setPage("article-detail"); window.scrollTo({ top: 0 }); }}>
-                <div style={{ display: "flex", minHeight: 180 }}>
-                  {a.img && <div style={{ width: 220, minHeight: "100%", flexShrink: 0, background: `url(${a.img})`, backgroundSize: "cover", backgroundPosition: "center", borderRight: "1px solid var(--border)" }} />}
-                  <div style={{ flex: 1, padding: "24px 28px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
-                        <div style={{ display: "inline-block", background: "var(--surface)", border: "1px solid var(--border)", padding: "2px 8px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: 1 }}>{a.classification}</div>
-                        <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)", whiteSpace: "nowrap" }}>{a.date}</div>
-                      </div>
-                      <h3 style={{ fontSize: 19, fontWeight: 500, lineHeight: 1.35, marginBottom: 8 }}>{isZh ? a.title_zh : a.title_en}</h3>
-                      <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 6 }}>{a.authors}</div>
-                      <p style={{ fontSize: 13.5, lineHeight: 1.7, color: "var(--text-faint)", maxWidth: 700 }}>{(isZh ? a.abstract_zh : a.abstract_en).slice(0, 160)}...</p>
-                    </div>
-                    <SocialBar article={a} t={t.articles} onShare={() => trackShare(a.id)} />
-                  </div>
+              <div key={a.id} className="article-card" style={{ padding: "24px 28px" }} onClick={() => { setSelectedArticle(a); setPage("article-detail"); window.scrollTo({ top: 0 }); }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
+                  <div style={{ display: "inline-block", background: "var(--surface)", border: "1px solid var(--border)", padding: "2px 8px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: 1 }}>{a.classification}</div>
+                  <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)", whiteSpace: "nowrap" }}>{a.date}</div>
                 </div>
+                <h3 style={{ fontSize: 19, fontWeight: 500, lineHeight: 1.35, marginBottom: 8 }}>{isZh ? a.title_zh : a.title_en}</h3>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 6 }}>{a.authors} {"\u2014"} <span style={{ fontStyle: "italic" }}>{a.affiliation}</span></div>
+                <p style={{ fontSize: 13.5, lineHeight: 1.7, color: "var(--text-faint)", maxWidth: 700 }}>{(isZh ? a.abstract_zh : a.abstract_en).slice(0, 200)}...</p>
+                <SocialBar article={a} t={t.articles} onShare={() => trackShare(a.id)} />
               </div>
             ))}
           </div>
