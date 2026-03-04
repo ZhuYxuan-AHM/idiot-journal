@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useT } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useArticles } from "@/hooks/useArticles";
+import { supabase, isLive } from "@/lib/supabase";
 import { DEMO_USER_PAPERS } from "@/lib/demo-data";
 import { TEMPLATE_EN, TEMPLATE_ZH } from "@/lib/templates";
 import { NavBar } from "@/components/layout/NavBar";
@@ -42,14 +43,39 @@ export default function App() {
   const goTo = (id: string) => { setPage("home"); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 100); };
   const handleCopy = () => { navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const handlePdf = () => window.print();
-  const handleSubmitPaper = () => {
+const handleSubmitPaper = async () => {
     if (!user) { setSubmitMsg(t.preview.loginFirst); return; }
+    if (!markdown.trim() || markdown.trim().length < 100) {
+      setSubmitMsg("Paper content is too short. Please write at least 100 characters.");
+      setTimeout(() => setSubmitMsg(""), 4000);
+      return;
+    }
+    if (isLive && supabase) {
+      const { error } = await supabase.from("submissions").insert({
+        user_id: user.id,
+        title: markdown.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 200) || "Untitled",
+        markdown,
+        classification: "Human Bewilderment",
+        status: "draft",
+      });
+      if (error) {
+        setSubmitMsg("Submission failed: " + error.message);
+        setTimeout(() => setSubmitMsg(""), 5000);
+        return;
+      }
+    }
     setSubmitMsg(t.preview.submitSuccess);
     setTimeout(() => setSubmitMsg(""), 4000);
   };
-  const handleLogin = async (email: string, password: string) => { await signIn(email, password); };
-  const handleRegister = async (email: string, password: string, meta: { name: string; affiliation: string }) => { await signUp(email, password, meta); };
-
+  const handleLogin = async (email: string, password: string) => {
+    const { error } = await signIn(email, password);
+    return { error: error ? (typeof error === "string" ? error : (error as any).message ?? "Login failed") : null };
+  };
+  const handleRegister = async (email: string, password: string, meta: { name: string; affiliation: string }) => {
+    const { error } = await signUp(email, password, meta);
+    return { error: error ? (typeof error === "string" ? error : (error as any).message ?? "Registration failed") : null };
+  };
+  
   const navProps = {
     t, lang, setLang, userName: user?.name.split(" ")[0],
     onNavigate: (p: string) => { setPage(p); window.scrollTo({ top: 0 }); },
