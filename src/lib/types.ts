@@ -51,6 +51,16 @@ export interface UserProfile {
   created_at: string;
 }
 
+export interface Comment {
+  id: string;
+  article_id: string;
+  user_id: string;
+  user_name: string;
+  user_badge: UserBadge;
+  content: string;
+  created_at: string;
+}
+
 /* ═══════════════ Supabase Row Types (mirrors DB schema) ═══════════════ */
 
 export interface DbArticle {
