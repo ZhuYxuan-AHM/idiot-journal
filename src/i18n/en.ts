@@ -91,4 +91,4 @@ export const en = {
     tagline: "Documenting irrational outcomes of technology, before they become normalized.",
     copy: "I.D.I.O.T. Journal \u2014 All content under CC BY 4.0",
   },
-} as const;
+} ;
