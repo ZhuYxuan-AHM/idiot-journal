@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StarRating } from "./StarRating";
 import type { Article } from "@/lib/types";
 import type { T } from "@/i18n";
@@ -9,10 +10,14 @@ interface Props {
 }
 
 export function SocialBar({ article: a, t, onShare }: Props) {
+  const [shared, setShared] = useState(false);
+
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText("https://idiotjournal.org/" + a.id);
     onShare?.();
+    setShared(true);
+    setTimeout(() => setShared(false), 2000);
   };
 
   return (
@@ -25,12 +30,14 @@ export function SocialBar({ article: a, t, onShare }: Props) {
       <button
         onClick={handleShare}
         style={{
-          background: "none", border: "none", color: "var(--text-faint)",
+          background: "none", border: "none",
+          color: shared ? "var(--gold)" : "var(--text-faint)",
           fontSize: 11, fontFamily: "var(--mono)", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 4, padding: 0,
+          transition: "color 0.3s",
         }}
       >
-        \u2197 {t.share} <span style={{ color: "var(--text-ghost)" }}>({a.shares})</span>
+        {shared ? "\u2713" : "\u2197"} {shared ? t.shareMsg : t.share} <span style={{ color: "var(--text-ghost)" }}>({a.shares})</span>
       </button>
       <span
         style={{
