@@ -1,7 +1,7 @@
 export const zh = {
   nav: { about: "关于", scope: "范围", submit: "投稿", preview: "预览", articles: "文章", editorial: "编委会", login: "登录" },
   hero: {
-    badge: "开放获取 · 同行评审 · ISSN XXXX-XXXX",
+    badge: "开放获取 · 同行评审",
     title: "I.D.I.O.T.", titleCn: "若智",
     subtitle: "技术中非理性结果的跨学科讨论",
     desc: "一本国际性开放获取学术期刊，致力于严谨研究非理性、荒谬和适得其反的行为——从被技术迷惑的人类，到迷惑人类的AI，再到在两者之间做出壮观愚行的组织。",
