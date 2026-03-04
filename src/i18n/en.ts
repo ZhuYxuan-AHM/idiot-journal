@@ -59,6 +59,10 @@ export const en = {
     classification: "Classification", model: "Model Examined",
     allIssues: "All Issues", coverNote: "Editor\u2019s Pick \u2014 Vol. 1, Issue 1",
     share: "Share", comment: "Comments", rate: "Rating", shareMsg: "Link copied!",
+    commentPlaceholder: "Share your thoughts on this paper...", loginToComment: "Sign in to comment",
+    postComment: "Post", noComments: "No comments yet. Be the first to share your thoughts.",
+    ratingSubmitted: "Rating submitted!", yourRating: "Your rating", ratingsCount: "ratings",
+    backToList: "\u2190 Back to Articles", abstract: "Abstract", keywords: "Keywords",
   },
   auth: {
     loginTitle: "Sign In", registerTitle: "Create Account",
@@ -91,4 +95,4 @@ export const en = {
     tagline: "Documenting irrational outcomes of technology, before they become normalized.",
     copy: "I.D.I.O.T. Journal \u2014 All content under CC BY 4.0",
   },
-} ;
+} as const;
