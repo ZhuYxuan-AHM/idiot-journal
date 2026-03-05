@@ -618,7 +618,15 @@ export default function App() {
                 {allSubmissions
                   .filter(s => s.status !== "draft") // 永远过滤掉草稿
                   .filter(s => {
-                    if (dashboardFilter === "pending") return ["submitted", "under_review", "revision"].includes(s.status);
+                    if (dashboardFilter === "pending") {
+                      // 【核心逻辑】如果是审稿人，只看“全新提交”的稿件。
+                      // 只要任何一个审稿人点过提交（状态变成了 under_review），它就会从所有审稿人的待处理池中消失！
+                      if (profileMode === "reviewer") {
+                        return s.status === "submitted";
+                      }
+                      // 如果是主编/编辑，统揽全局，需要处理新提交的、以及审稿人刚审完的(under_review)
+                      return ["submitted", "under_review", "revision"].includes(s.status);
+                    }
                     if (dashboardFilter === "resolved") return ["accepted", "published"].includes(s.status);
                     if (dashboardFilter === "rejected") return s.status === "rejected";
                     return true; // "all"
@@ -630,11 +638,20 @@ export default function App() {
                 ) : allSubmissions
                   .filter(s => s.status !== "draft")
                   .filter(s => {
-                    if (dashboardFilter === "pending") return ["submitted", "under_review", "revision"].includes(s.status);
+                    if (dashboardFilter === "pending") {
+                      // 【核心逻辑】如果是审稿人，只看“全新提交”的稿件。
+                      // 只要任何一个审稿人点过提交（状态变成了 under_review），它就会从所有审稿人的待处理池中消失！
+                      if (profileMode === "reviewer") {
+                        return s.status === "submitted";
+                      }
+                      // 如果是主编/编辑，统揽全局，需要处理新提交的、以及审稿人刚审完的(under_review)
+                      return ["submitted", "under_review", "revision"].includes(s.status);
+                    }
                     if (dashboardFilter === "resolved") return ["accepted", "published"].includes(s.status);
                     if (dashboardFilter === "rejected") return s.status === "rejected";
-                    return true;
+                    return true; // "all"
                   })
+                  
                   .map((p) => (
                   <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, cursor: "pointer", transition: "border-color 0.3s" }}
                        onMouseEnter={(e) => e.currentTarget.style.borderColor = profileMode === "editor" ? "#d4af37" : "#a78bfa"}
