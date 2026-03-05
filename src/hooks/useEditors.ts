@@ -18,8 +18,14 @@ export function useEditors() {
     }
 
     async function fetchEditors() {
-      // 拉取所有具有编辑权限的用户
-      const { data } = await supabase!
+      // 1. 明确的类型保护：如果 supabase 是 null，直接退出函数
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
+
+      // 2. 此时 TypeScript 已经 100% 确信 supabase 不为 null 了
+      const { data } = await supabase
         .from("profiles")
         .select("*")
         .in("badge", ["editor_in_chief", "associate_editor", "editor"]);
@@ -39,7 +45,6 @@ export function useEditors() {
           created_at: d.created_at,
         }));
         
-        // 按照职级排序：主编 > 副主编 > 编辑
         const order = { editor_in_chief: 1, associate_editor: 2, editor: 3 };
         formatted.sort((a, b) => 
           (order[a.badge as keyof typeof order] || 99) - (order[b.badge as keyof typeof order] || 99)
