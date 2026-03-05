@@ -15,6 +15,7 @@ export function useSubmissions(userId: string | undefined, badge: string | undef
       .from("submissions")
       .select("*")
       .eq("user_id", userId)
+      .neq("status", "draft") // 👇 新增这一行：坚决不拉取草稿！
       .order("created_at", { ascending: false });
 
     if (myData) setMySubmissions(myData);
