@@ -7,14 +7,15 @@ interface Props {
   article: Article;
   t: T["articles"];
   onShare?: () => void;
+  onGeneratePoster?: () => void; // 👈 新增这个 prop
 }
 
-export function SocialBar({ article: a, t, onShare }: Props) {
+export function SocialBar({ article: a, t, onShare, onGeneratePoster }: Props) {
   const [shared, setShared] = useState(false);
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText("https://idiotjournal.org/" + a.id);
+    navigator.clipboard.writeText(`${window.location.origin}?article=${a.idiot_id}`);
     onShare?.();
     setShared(true);
     setTimeout(() => setShared(false), 2000);
@@ -24,7 +25,7 @@ export function SocialBar({ article: a, t, onShare }: Props) {
     <div
       style={{
         display: "flex", gap: 20, alignItems: "center",
-        paddingTop: 12, borderTop: "1px solid var(--border)", marginTop: 12,
+        paddingTop: 12, borderTop: "1px solid var(--border)", marginTop: 12, flexWrap: "wrap"
       }}
     >
       <button
@@ -39,6 +40,22 @@ export function SocialBar({ article: a, t, onShare }: Props) {
       >
         {shared ? "\u2713" : "\u2197"} {shared ? t.shareMsg : t.share} <span style={{ color: "var(--text-ghost)" }}>({a.shares})</span>
       </button>
+
+      {/* 👈 新增的海报按钮 */}
+      {onGeneratePoster && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onGeneratePoster(); }}
+          style={{
+            background: "none", border: "none",
+            color: "var(--gold)",
+            fontSize: 11, fontFamily: "var(--mono)", cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 4, padding: 0,
+          }}
+        >
+          🖼️ 生成病理海报
+        </button>
+      )}
+
       <span
         style={{
           color: "var(--text-faint)", fontSize: 11, fontFamily: "var(--mono)",
