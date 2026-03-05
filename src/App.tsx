@@ -320,16 +320,9 @@ export default function App() {
               {t.articles.abstract}
             </div>
             <p style={{ fontSize: 15.5, lineHeight: 2, color: "var(--text-dim)", textAlign: "justify" }}>
-              {isZh ? a.abstract_zh : a.abstract_en}
+              {isZh ? (a.abstract_zh || a.abstract_en) : (a.abstract_en || a.abstract_zh)}
             </p>
-            {isZh && <p style={{ fontSize: 14, lineHeight: 1.9, color: "var(--text-faint)", marginTop: 16, fontStyle: "italic" }}>{a.abstract_en}</p>}
           </div>
-
-          {a.keywords && (
-            <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginBottom: 32 }}>
-              <span style={{ fontWeight: 600, color: "var(--text-faint)" }}>{t.articles.keywords}:</span> {a.keywords}
-            </div>
-          )}
 
           <div style={{ height: 1, background: "var(--border)", margin: "8px 0 32px" }} />
 
