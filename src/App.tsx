@@ -412,10 +412,12 @@ export default function App() {
   if (page === "profile") {
     if (!user) { setAuthMode("login"); setPage("home"); return null; }
     const badgeMap: Record<string, { c: string; bg: string }> = {
-      reviewer: { c: "#a78bfa", bg: "#1a1a3a" },
-      author: { c: "#4ade80", bg: "#0a3a1a" },
-      editor: { c: "#d4af37", bg: "#3a2a0a" },
-      reader: { c: "#4a9eff", bg: "#1a3a5c" },
+      editor_in_chief:  { c: "#ef4444", bg: "#3a0a0a" }, 
+      associate_editor: { c: "#f472b6", bg: "#3a1a2a" }, 
+      editor:           { c: "#d4af37", bg: "#3a2a0a" }, 
+      reviewer:         { c: "#a78bfa", bg: "#1a1a3a" }, 
+      author:           { c: "#4ade80", bg: "#0a3a1a" }, 
+      reader:           { c: "#4a9eff", bg: "#1a3a5c" }, 
     };
     const ub = badgeMap[user.badge] ?? badgeMap.reader;
     
