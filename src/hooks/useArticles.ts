@@ -47,13 +47,13 @@ export function useArticles() {
         arts.map((d: any) => {
           const r = rMap.get(d.id);
           return {
-            id: d.id, vol: d.vol, issue: d.issue, featured: d.featured,
+            id: d.id, idiot_id: d.idiot_id ?? "", vol: d.vol, issue: d.issue, featured: d.featured,
             date: d.published_at, classification: d.classification,
             title_en: d.title_en, title_zh: d.title_zh,
             authors: d.authors, affiliation: d.affiliation,
             abstract_en: d.abstract_en, abstract_zh: d.abstract_zh,
             keywords: d.keywords, model: d.model_examined,
-            status: d.status, img: d.cover_url ?? "",
+            status: d.status, img: d.cover_url ?? "", pdf_url: d.pdf_url ?? "",
             shares: sMap.get(d.id) ?? 0,
             comments: cMap.get(d.id) ?? 0,
             rating: r ? +(r.sum / r.count).toFixed(1) : 0,
