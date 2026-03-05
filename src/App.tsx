@@ -460,10 +460,6 @@ const { error: uploadErr } = await supabase.storage
     contentType: "application/pdf", 
     upsert: true // 👈 关键：如果文件已存在，直接覆盖
   });
-    
-    const { error: uploadErr } = await supabase.storage
-      .from("papers")
-      .upload(finalPath, stampedBlob, { contentType: "application/pdf", upsert: true });
       
     if (uploadErr) throw uploadErr;
     const { data: urlData } = supabase.storage.from("papers").getPublicUrl(finalPath);
@@ -953,31 +949,31 @@ const { error: uploadErr } = await supabase.storage
                           let finalPdfUrl = activeReview.pdf_url; 
                           
                           // ──────── Stage 2 & 3: PDF 注入与上传 ────────
-try {
-  // 调用工具函数注入页眉页脚
-  const stampedBlob = await stampPdf(activeReview.pdf_url, newIdiotId, "1", "1");
+                          try {
+                          // 调用工具函数注入页眉页脚
+                          const stampedBlob = await stampPdf(activeReview.pdf_url, newIdiotId, "1", "1");
   
-  if (stampedBlob.size < 100) throw new Error("Generated PDF is too small.");
+                          if (stampedBlob.size < 100) throw new Error("Generated PDF is too small.");
 
-  // ✅ 使用固定文件名：这样后续更新也会覆盖此路径，不会产生旧版本堆积
-  const finalPath = `published/final-${newIdiotId}.pdf`; 
+                          // ✅ 使用固定文件名：这样后续更新也会覆盖此路径，不会产生旧版本堆积
+                          const finalPath = `published/final-${newIdiotId}.pdf`; 
   
-  if (!supabase) throw new Error("Connection lost during process");
+                          if (!supabase) throw new Error("Connection lost during process");
 
-  // ✅ 核心修复：变量名改为 publishUploadErr，并保留 upsert: true
-  const { error: publishUploadErr } = await supabase.storage
-    .from("papers")
-    .upload(finalPath, stampedBlob, { 
-      contentType: "application/pdf", 
-      upsert: true 
-    });
+                          // ✅ 核心修复：变量名改为 publishUploadErr，并保留 upsert: true
+                          const { error: publishUploadErr } = await supabase.storage
+                          .from("papers")
+                          .upload(finalPath, stampedBlob, { 
+                          contentType: "application/pdf", 
+                          upsert: true 
+                    });
 
-  if (publishUploadErr) throw publishUploadErr; // 使用新的变量名
+                          if (publishUploadErr) throw publishUploadErr; // 使用新的变量名
 
-  // 获取正式版公开链接
-  const { data: urlData } = supabase.storage.from("papers").getPublicUrl(finalPath);
-  if (!urlData) throw new Error("Could not get public URL");
-  finalPdfUrl = urlData.publicUrl;
+                          // 获取正式版公开链接
+                          const { data: urlData } = supabase.storage.from("papers").getPublicUrl(finalPath);
+                          if (!urlData) throw new Error("Could not get public URL");
+                          finalPdfUrl = urlData.publicUrl;
 
                             // ──────── Stage 4: 更新文章表链接 ────────
                             const { error: updateErr } = await supabase
