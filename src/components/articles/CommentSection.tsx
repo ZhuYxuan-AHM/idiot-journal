@@ -3,10 +3,13 @@ import { useComments } from "@/hooks/useComments";
 import type { UserProfile } from "@/lib/types";
 import type { T } from "@/i18n";
 
+// 补充了主编和副主编的专属配色！
 const BADGE_COLORS: Record<string, { c: string; bg: string }> = {
+  editor_in_chief:  { c: "#ef4444", bg: "#3a0a0a" },
+  associate_editor: { c: "#f472b6", bg: "#3a1a2a" },
+  editor:   { c: "#d4af37", bg: "#3a2a0a" },
   reviewer: { c: "#a78bfa", bg: "#1a1a3a" },
   author:   { c: "#4ade80", bg: "#0a3a1a" },
-  editor:   { c: "#d4af37", bg: "#3a2a0a" },
   reader:   { c: "#4a9eff", bg: "#1a3a5c" },
 };
 
@@ -127,7 +130,8 @@ export function CommentSection({ articleId, user, t, onLoginRequired }: Props) {
                     background: bc.bg, color: bc.c,
                     padding: "1px 7px", fontSize: 9, fontFamily: "var(--mono)", letterSpacing: 1,
                   }}>
-                    {c.user_badge}
+                    {/* 这里修复了头衔翻译 */}
+                    {t.profile[("badge_" + c.user_badge) as keyof typeof t.profile] || c.user_badge}
                   </span>
                   <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>
                     {timeAgo(c.created_at)}
