@@ -47,28 +47,31 @@ export default function App() {
   const { articles, trackShare } = useArticles();
   const { editors } = useEditors();
 
-  // 自动解析分享链接的逻辑
+  // 自动解析分享链接
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sharedArticleId = params.get("article");
 
-    if (sharedArticleId && supabase) {
+    if (sharedArticleId) {
       const fetchSharedArticle = async () => {
-        // 从数据库中拉取这篇文章
-        const { data, error } = await supabase
+        // 👇 1. 在异步函数内部加一行安全检查，彻底消除 TypeScript 的“可能为空”报错
+        if (!supabase) return; 
+
+        const { data } = await supabase
           .from("articles")
           .select("*")
           .eq("idiot_id", sharedArticleId)
           .single();
 
         if (data) {
-          setActiveArticle(data);
+          // 👇 2. 修正了状态函数名，使用你代码中真实的 setSelectedArticle
+          setSelectedArticle(data); 
           setPage("article-detail");
         }
       };
       fetchSharedArticle();
     }
-  }, []); // 最后的 [] 表示这段代码只在页面刚打开时执行一次
+  }, []); // [] 确保只在页面刚打开时执行一次
 
   const goTo = (id: string) => { setPage("home"); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 100); };
 
