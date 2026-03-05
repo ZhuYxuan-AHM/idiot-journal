@@ -132,7 +132,7 @@ export default function App() {
           <div className="gl" style={{ marginTop: 20 }} />
           <h1 style={{ fontSize: 36, fontWeight: 300, marginBottom: 8 }}>{isZh ? "\u6295\u7a3f" : "Submit Manuscript"}</h1>
           <p style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--text-faint)", marginBottom: 8, letterSpacing: 1 }}>
-            {isZh ? "\u4e0a\u4f20\u60a8\u7684\u7814\u7a76\u8bba\u6587\u81f3 I.D.I.O.T. \u82e5\u667a" : "Upload your research paper to I.D.I.O.T. \u82e5\u667a"}
+            {isZh ? "\u4e0a\u4f20\u60a8\u7684\u7814\u7a76\u8bba\u6587\u81f3 I.D.I.O.T. 若智" : "Upload your research paper to I.D.I.O.T. 若智"}
           </p>
 
           {/* Format guidelines */}
@@ -201,7 +201,7 @@ export default function App() {
                     </div>
                   ) : (
                     <div>
-                      <div style={{ fontSize: 24, color: "var(--text-ghost)", marginBottom: 8 }}>\u2191</div>
+                      <div style={{ fontSize: 24, color: "var(--text-ghost)", marginBottom: 8 }}>↑</div>
                       <div style={{ fontSize: 13, color: "var(--text-faint)" }}>{isZh ? "\u70b9\u51fb\u6216\u62d6\u62fdPDF\u6587\u4ef6\u5230\u6b64\u5904" : "Click or drag PDF file here"}</div>
                       <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginTop: 4 }}>PDF, max 20MB</div>
                     </div>
