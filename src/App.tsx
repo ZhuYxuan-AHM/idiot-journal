@@ -436,12 +436,32 @@ export default function App() {
                         setIsUpdatingArticle(true);
                         try {
                           let finalPdfUrl = a.pdf_url;
-                          // 1. 如果选中了新 PDF，先上传到云端
+                          
+                          // 1. 如果选中了新 PDF，先进行打标加工，再上传
                           if (editPdf) {
-                            const fileName = `updated-${Date.now()}-${editPdf.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-                            const { error: uploadErr } = await supabase.storage.from("papers").upload(fileName, editPdf, { contentType: "application/pdf" });
+                            // 👇 核心修复：在这里调用打标工具
+                            // 注意：由于 editPdf 是 File 对象，我们需要先给它创建一个临时 URL 供 stampPdf 读取
+                            const tempUrl = URL.createObjectURL(editPdf);
+                            
+                            // 调用注入函数（使用当前文章已有的编号、卷号、期号）
+                            const stampedBlob = await stampPdf(tempUrl, a.idiot_id, a.vol, a.issue);
+                            
+                            // 释放临时 URL 节省内存
+                            URL.revokeObjectURL(tempUrl);
+
+                            const fileName = `updated-${a.idiot_id}-${Date.now()}.pdf`;
+                            
+                            // 上传打过标的 Blob
+                            const { error: uploadErr } = await supabase.storage
+                              .from("papers")
+                              .upload(`published/${fileName}`, stampedBlob, { 
+                                contentType: "application/pdf",
+                                upsert: true 
+                              });
+                              
                             if (uploadErr) throw new Error(uploadErr.message);
-                            const { data: urlData } = supabase.storage.from("papers").getPublicUrl(fileName);
+                            
+                            const { data: urlData } = supabase.storage.from("papers").getPublicUrl(`published/${fileName}`);
                             finalPdfUrl = urlData.publicUrl;
                           }
 
@@ -456,9 +476,9 @@ export default function App() {
                           if (updateErr) throw new Error(updateErr.message);
                           
                           alert(isZh ? "文章信息与附件更新成功！" : "Article updated successfully!");
-                          window.location.reload(); // 刷新页面展示最新内容
+                          window.location.reload(); 
                         } catch (e: any) {
-                          alert("Error: " + e.message);
+                          alert("Update Error: " + e.message);
                         }
                         setIsUpdatingArticle(false);
                       }}
