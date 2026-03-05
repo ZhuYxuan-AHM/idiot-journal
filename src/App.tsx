@@ -452,8 +452,14 @@ export default function App() {
     const stampedBlob = await stampPdf(tempUrl, a.idiot_id, a.vol, a.issue);
     URL.revokeObjectURL(tempUrl);
 
-    const fileName = `updated-${a.idiot_id}-${Date.now()}.pdf`;
-    const finalPath = `published/${fileName}`;
+    const finalPath = `published/final-${a.idiot_id}.pdf`; 
+
+const { error: uploadErr } = await supabase.storage
+  .from("papers")
+  .upload(finalPath, stampedBlob, { 
+    contentType: "application/pdf", 
+    upsert: true // 👈 关键：如果文件已存在，直接覆盖
+  });
     
     const { error: uploadErr } = await supabase.storage
       .from("papers")
