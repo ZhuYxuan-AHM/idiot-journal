@@ -146,8 +146,10 @@ export default function App() {
               {isZh ? "\u6295\u7a3f\u8981\u6c42" : "SUBMISSION GUIDELINES"}
             </div>
             {isZh ? (
-  <span>• 接受PDF格式，最大20MB • 论文应包含标题、摘要、关键词、正文和参考文献或新闻出处<br /> 
-        • 正文格式参考(最少应包含下面四个章节) <br />
+  <span>• 接受PDF格式，最大20MB  •  论文应包含标题、摘要、关键词、正文和参考文献或新闻出处<br /> 
+        <br />
+    •  正文格式参考(最少应包含下面四个章节) <br />
+    <br />
         第一章：实验背景与诱因 (Introduction & Incitement)<br />
         核心逻辑： 基于真实存在的行为，解释为什么这个弱智行为值得研究。<br />
         撰写要点：<br />
