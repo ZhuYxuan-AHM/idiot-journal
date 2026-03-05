@@ -300,11 +300,11 @@ export default function App() {
 
           {/* Title */}
           <h1 style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.4, marginBottom: 8 }}>
-          {isZh ? (a.title_zh || a.title_en) : (a.title_en || a.title_zh)}
+            {isZh ? (a.title_zh || a.title_en) : (a.title_en || a.title_zh)}
           </h1>
-          {isZh && a.title_en && <h2 style={{ fontSize: 18, fontWeight: 300, color: "var(--text-muted)", marginBottom: 12, fontStyle: "italic" }}>{a.title_en}</h2>}
-          {!isZh && a.title_zh && <h2 style={{ fontSize: 18, fontWeight: 300, color: "var(--text-muted)", marginBottom: 12, fontFamily: "var(--serif-cn)" }}>{a.title_zh}</h2>}
-
+          {isZh && a.title_en && a.title_zh && (a.title_en !== a.title_zh) && <h2 style={{ fontSize: 18, fontWeight: 300, color: "var(--text-muted)", marginBottom: 12, fontStyle: "italic" }}>{a.title_en}</h2>}
+          {!isZh && a.title_zh && a.title_en && (a.title_zh !== a.title_en) && <h2 style={{ fontSize: 18, fontWeight: 300, color: "var(--text-muted)", marginBottom: 12, fontFamily: "var(--serif-cn)" }}>{a.title_zh}</h2>}
+          
           {/* Authors */}
           <div style={{ fontSize: 16, color: "var(--text-dim)", marginBottom: 4, fontWeight: 500 }}>{a.authors}</div>
           <div style={{ fontSize: 13, color: "var(--text-faint)", fontStyle: "italic", marginBottom: 8 }}>{a.affiliation}</div>
