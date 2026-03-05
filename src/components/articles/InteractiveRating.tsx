@@ -40,11 +40,12 @@ export function InteractiveRating({ articleId, user, t, onLoginRequired }: Props
             {[1, 2, 3, 4, 5].map((i) => (
               <span
                 key={i}
-                onMouseEnter={() => setHover(i)}
-                onMouseLeave={() => setHover(0)}
-                onClick={() => handleRate(i)}
+                onMouseEnter={() => !userRating && setHover(i)}
+                onMouseLeave={() => !userRating && setHover(0)}
+                onClick={() => !userRating && handleRate(i)}
                 style={{
-                  fontSize: 28, cursor: "pointer",
+                  fontSize: 28, 
+                  cursor: userRating ? "default" : "pointer",
                   color: i <= (hover || userRating || 0) ? "var(--gold)" : "var(--text-dead)",
                   transition: "color 0.15s, transform 0.15s",
                   transform: hover === i ? "scale(1.2)" : "scale(1)",
