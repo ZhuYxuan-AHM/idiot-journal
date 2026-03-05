@@ -141,7 +141,49 @@ export default function App() {
               {isZh ? "\u6295\u7a3f\u8981\u6c42" : "SUBMISSION GUIDELINES"}
             </div>
             {isZh ? (
-  <span>• 接受PDF格式，最大20MB • 论文应包含标题、摘要、关键词、正文和参考文献 • 推荐使用 LaTeX 或 Word 导出 PDF • 编辑团队将在提交后审核您的稿件</span>
+  <span>• 接受PDF格式，最大20MB • 论文应包含标题、摘要、关键词、正文和参考文献 
+        • 格式参考
+        第一章：实验背景与诱因 (Introduction & Incitement)
+        核心逻辑： 解释为什么这个弱智行为值得研究。
+        撰写要点：
+        媒体吹捧点： 引用一段媒体或厂商关于该模型此项能力的吹嘘。
+        预期表现： 按照“跑分”逻辑，AI 应该表现出的智能水平。
+        现实冲突： 简述你如何偶然（或刻意）触发了它的荒诞模式。
+
+第二章：弱智现象实录 (The Idiotic Phenomenon)
+核心逻辑： 像展示真理一样，不加修饰地展示 AI 翻车的现场。
+
+撰写要点：
+
+对话复现： 摘录关键的提问与回答（需保持原始格式）。
+
+现象分类： 明确该行为属于哪类“弱智行为”（如：逻辑循环、常识脱轨、自发性幻觉、计算性痴呆）。
+
+受害者视角： 描述如果这个回答直接应用到科研或商业中，会造成什么样的灾难。
+
+第三章：逻辑尸检 (Logical Autopsy / Analysis)
+核心逻辑： 这是最硬核的部分，剥开 AI 的智能外壳，看看里面的逻辑链是怎么断的。
+
+撰写要点：
+
+语义引力崩塌： 用你的 CGFT（认知引力场理论） 或其他框架，分析 AI 在处理哪个关键词或逻辑连接词时产生了偏差。
+
+提示词脆弱性： 尝试微调 Prompt（如改一个逗号），展示这种“弱智”是否具有顽固性。
+
+跨模型验证： 同样的问题在 GPT-4, Claude, DeepSeek 上的不同失败表现。
+
+第四章：合成补丁与结论 (Synthetic Patch & Synthesis)
+核心逻辑： 针对这种弱智行为，我们是能治好它，还是只能“埋了它”。
+
+撰写要点：
+
+提示词补丁 (The Patch)： 给出能纠正该弱智行为的有效指令（如果有）。
+
+边界定义： 明确该模型在这一特定领域的“绝对禁区”。
+
+最终裁决： 针对该模型的真实能力给出一个“反吹捧”的量化评价。
+    
+• 推荐使用 LaTeX 或 Word 导出 PDF • 编辑团队将在提交后审核您的稿件</span>
 ) : (
   <span>• PDF format only, max 20MB • Paper should include title, abstract, keywords, body, and references • Recommended: export from LaTeX or Word • The editorial team will review your manuscript after submission</span>
 )}
