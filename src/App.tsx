@@ -21,44 +21,25 @@ import "@/styles/global.css";
 
 export default function App() {
   const [lang, setLang] = useState<Lang>("en");
-  // 1. 初始化时，先看一眼网址栏里有没有带参数
-  const [page, setPageState] = useState<string>(() => {
+  // 1. 初始化时，直接从网址读取要去的页面
+  const [page, setPage] = useState<string>(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("article")) return "home"; // 如果是文章分享链接，先用 home 打底，防白屏
-    return params.get("view") || "home";      // 如果网址有 ?view=xxx，就直接进入该页面，否则默认 home
+    if (params.get("article")) return "home"; // 如果是文章详情，先用 home 打底交由另一个 useEffect 处理
+    return params.get("view") || "home";
   });
 
-  // 2. 拦截并升级 setPage 函数，让它在切换页面的同时，自动修改网址！
-  const setPage = (newPage: string) => {
-    setPageState(newPage); // 更新真实的 React 页面状态
-    
+  // 2. 只要 page 发生变化，就安静地把网址栏更新（不刷新页面）
+  useEffect(() => {
     const url = new URL(window.location.href);
-    if (newPage === "home") {
+    if (page === "home") {
       url.searchParams.delete("view");
-      url.searchParams.delete("article");
-    } else if (newPage === "article-detail") {
-      url.searchParams.delete("view");
-      // 详情页保留 ?article=xxx 参数，由专门的分享逻辑接管
-    } else {
-      url.searchParams.set("view", newPage);
+    } else if (page !== "article-detail") {
+      url.searchParams.set("view", page);
       url.searchParams.delete("article");
     }
-    
-    // 无刷新地悄悄改变浏览器网址
-    window.history.pushState({}, '', url.toString());
-  };
-
-  // 3. 监听浏览器的“前进/后退”按钮，做到完美同步
-  useEffect(() => {
-    const handlePopState = () => {
-      const params = new URLSearchParams(window.location.search);
-      if (!params.get("article")) {
-        setPageState(params.get("view") || "home");
-      }
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+    window.history.replaceState({}, '', url.toString());
+  }, [page]);
+  
   const [scrollY, setScrollY] = useState(0);
   const [authMode, setAuthMode] = useState<"login" | "register" | null>(null);
   const [submitMsg, setSubmitMsg] = useState("");
@@ -481,7 +462,25 @@ export default function App() {
 
  /* ═══════════════ PROFILE PAGE ═══════════════ */
   if (page === "profile") {
-    if (!user) { setAuthMode("login"); setPage("home"); return null; }
+    // 如果没有获取到 user，不要粗暴地踢回主页，而是给 Supabase 留出半秒钟的加载时间
+    if (!user) { 
+      return (
+        <div style={{ minHeight: "100vh", paddingTop: 160, textAlign: "center" }}>
+          <NavBar {...navProps} />
+          <h3 style={{ fontSize: 18, color: "var(--text-dim)", marginBottom: 24, fontFamily: "var(--mono)" }}>
+            {isZh ? "正在验证身份信息..." : "Verifying session..."}
+          </h3>
+          <p style={{ fontSize: 13, color: "var(--text-ghost)", marginBottom: 32 }}>
+            {isZh ? "如果您尚未登录，请点击下方按钮" : "If you are not logged in, please proceed below."}
+          </p>
+          <button className="bp" onClick={() => { setAuthMode("login"); setPage("home"); }}>
+            {isZh ? "返回首页并登录" : "Return Home & Login"}
+          </button>
+          <AuthModal t={t} mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onRegister={handleRegister} />
+        </div>
+      );
+    }
+    
     const badgeMap: Record<string, { c: string; bg: string }> = {
       editor_in_chief:  { c: "#ef4444", bg: "#3a0a0a" },
       associate_editor: { c: "#f472b6", bg: "#3a1a2a" },
