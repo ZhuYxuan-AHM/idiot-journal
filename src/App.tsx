@@ -31,11 +31,13 @@ export default function App() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  
   // Reviewer dashboard
   const [profileMode, setProfileMode] = useState<"author" | "reviewer" | "editor">("author");
   const [activeReview, setActiveReview] = useState<any | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [reviewStatus, setReviewStatus] = useState<"accepted" | "rejected" | "revision">("revision");
+  const [showPdf, setShowPdf] = useState(false);
 
   const t = useT(lang);
   const { user, signIn, signUp, signOut } = useAuth();
@@ -516,13 +518,13 @@ export default function App() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 48 }}>
                 {[
-                  { id: "sub-999", title: "When LLMs Play D&D: A Study in Spontaneous Rule Forgetting", abstract: "This paper explores the spectacular failure modes of large language models when asked to maintain consistent rulesets over extended context windows, specifically focusing on tabletop RPG scenarios.", status: "under_review", submitted: "2026-03-04" },
-                  { id: "sub-998", title: "The 'Yes, but' Paradox: Sycophancy disguised as Critical Thinking", abstract: "An analysis of 500 conversations where AI models agree with the user's blatantly incorrect premises while pretending to offer nuanced pushback.", status: "revision", submitted: "2026-03-02" }
+                  { id: "sub-999", title: "When LLMs Play D&D: A Study in Spontaneous Rule Forgetting", abstract: "This paper explores the spectacular failure modes of large language models when asked to maintain consistent rulesets over extended context windows, specifically focusing on tabletop RPG scenarios.", status: "under_review", submitted: "2026-03-04", pdf_url: "https://pdfobject.com/pdf/sample.pdf" },
+                  { id: "sub-998", title: "The 'Yes, but' Paradox: Sycophancy disguised as Critical Thinking", abstract: "An analysis of 500 conversations where AI models agree with the user's blatantly incorrect premises while pretending to offer nuanced pushback.", status: "revision", submitted: "2026-03-02", pdf_url: "https://pdfobject.com/pdf/sample.pdf" }
                 ].map((p) => (
                   <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, cursor: "pointer", transition: "border-color 0.3s" }}
                        onMouseEnter={(e) => e.currentTarget.style.borderColor = profileMode === "editor" ? "#d4af37" : "#a78bfa"}
                        onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
-                       onClick={() => setActiveReview(p)}>
+                       onClick={() => { setActiveReview(p); setShowPdf(false); }}>
                     <div style={{ flex: 1, minWidth: 300 }}>
                       <h4 style={{ fontSize: 17, fontWeight: 500, lineHeight: 1.35, marginBottom: 6, color: "var(--text)" }}>{p.title}</h4>
                       <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
@@ -542,8 +544,8 @@ export default function App() {
           {/* --- 5. 操作面板 (根据身份动态变化) --- */}
           {(profileMode === "reviewer" || profileMode === "editor") && activeReview && (
             <div style={{ marginBottom: 48, animation: "fadeIn 0.3s" }}>
-              <button className="nl" style={{ marginBottom: 24, fontSize: 12, padding: 0, border: "none", background: "none" }} onClick={() => setActiveReview(null)}>
-                ← {isZh ? "返回列表" : "Back to List"}
+              <button className="nl" style={{ marginBottom: 24, fontSize: 12, padding: 0, border: "none", background: "none" }} onClick={() => { setActiveReview(null); setShowPdf(false); }}>
+              ← {isZh ? "返回列表" : "Back to List"}
               </button>
               
               <div style={{ border: `1px solid ${profileMode === "editor" ? "var(--gold-dim)" : "rgba(167,139,250,0.2)"}`, background: "rgba(255,255,255,0.01)", padding: "32px 40px" }}>
@@ -555,9 +557,23 @@ export default function App() {
                   <strong style={{ color: "var(--text)" }}>Abstract:</strong> {activeReview.abstract}
                 </div>
                 
-                <a href="#" className="bp bs" style={{ marginBottom: 32, display: "inline-block" }} onClick={(e) => { e.preventDefault(); alert("Will open PDF attachment"); }}>
-                  {isZh ? "查看完整 PDF 附件" : "View Full PDF"}
-                </a>
+                {/* PDF 预览切换按钮 */}
+                <button className="bp bs" style={{ marginBottom: showPdf ? 24 : 32, display: "inline-block", borderColor: showPdf ? "var(--text-ghost)" : "var(--gold)", color: showPdf ? "var(--text)" : "var(--gold)" }} onClick={() => setShowPdf(!showPdf)}>
+                  {showPdf ? (isZh ? "收起 PDF 预览" : "Hide PDF Preview") : (isZh ? "📄 在线预览完整 PDF 附件" : "📄 Preview Full PDF")}
+                </button>
+
+                {/* 内嵌的 PDF 阅读器窗口 */}
+                {showPdf && (
+                  <div style={{ width: "100%", height: "70vh", marginBottom: 32, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)", background: "#fff", animation: "fadeIn 0.3s" }}>
+                    <iframe 
+                      src={activeReview.pdf_url} 
+                      width="100%" 
+                      height="100%" 
+                      style={{ border: "none" }} 
+                      title="PDF Preview" 
+                    />
+                  </div>
+                )}
 
                 <div className="dv" style={{ margin: "24px 0" }} />
 
@@ -599,6 +615,7 @@ export default function App() {
                     <button className="bp" style={{ background: profileMode === "editor" ? "var(--gold)" : "#a78bfa", color: "var(--bg)", borderColor: "transparent" }} onClick={() => {
                       alert(isZh ? `已提交: ${reviewStatus}` : `Submitted: ${reviewStatus}`);
                       setActiveReview(null);
+                      setShowPdf(false);
                       setReviewNotes("");
                     }}>
                       {profileMode === "editor" ? (isZh ? "确认稿件状态" : "Confirm Status") : (isZh ? "提交评审建议" : "Submit Recommendation")}
