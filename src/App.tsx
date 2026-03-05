@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useT } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useArticles } from "@/hooks/useArticles";
+import { useEditors } from "@/hooks/useEditors";
 import { supabase, isLive } from "@/lib/supabase";
 import { DEMO_USER_PAPERS } from "@/lib/demo-data";
 import { NavBar } from "@/components/layout/NavBar";
@@ -39,6 +40,7 @@ export default function App() {
   const t = useT(lang);
   const { user, signIn, signUp, signOut } = useAuth();
   const { articles, trackShare } = useArticles();
+  const { editors } = useEditors();
 
   useEffect(() => {
     const f = () => setScrollY(window.scrollY);
@@ -728,6 +730,36 @@ export default function App() {
         <div className="gl" style={{ margin: "0 auto 24px" }} />
         <h2 style={{ fontSize: 38, fontWeight: 300, marginBottom: 32, lineHeight: 1.3 }}>{t.editorial.title}</h2>
         <p style={{ fontSize: 17, lineHeight: 1.9, color: "var(--text-muted)", maxWidth: 600, margin: "0 auto 48px" }}>{t.editorial.note}</p>
+        
+        {/* --- 动态渲染编委会成员 --- */}
+        {editors.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 32, marginBottom: 48 }}>
+            {editors.map((ed) => {
+              // 匹配我们在 Profile 里用过的炫酷颜色
+              const styleMap: Record<string, { c: string; bg: string }> = {
+                editor_in_chief:  { c: "#ef4444", bg: "rgba(239,68,68,0.08)" },
+                associate_editor: { c: "#f472b6", bg: "rgba(244,114,182,0.08)" },
+                editor:           { c: "#d4af37", bg: "rgba(212,175,55,0.08)" },
+              };
+              const st = styleMap[ed.badge] || styleMap.editor;
+              
+              return (
+                <div key={ed.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", transition: "all 0.3s" }} className="article-card">
+                  <div style={{ width: 72, height: 72, borderRadius: "50%", background: st.bg, border: `1px solid ${st.c}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontFamily: "var(--mono)", color: st.c, fontWeight: 600, marginBottom: 20 }}>
+                    {ed.name[0]}
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 500, marginBottom: 8 }}>{ed.name}</h3>
+                  <div style={{ display: "inline-block", background: st.bg, color: st.c, padding: "3px 12px", fontSize: 11, fontFamily: "var(--mono)", letterSpacing: 1, borderRadius: 2, marginBottom: 16 }}>
+                    {/* 使用翻译文件中对应头衔 */}
+                    {t.profile[("badge_" + ed.badge) as keyof typeof t.profile] || ed.badge}
+                  </div>
+                  <div style={{ fontSize: 14, color: "var(--text-faint)", fontStyle: "italic", lineHeight: 1.6 }}>{ed.affiliation}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <a href="mailto:editorial@idiotjournal.org" className="bp">{t.editorial.cta}</a>
       </div></section>
 
