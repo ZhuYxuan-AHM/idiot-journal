@@ -338,14 +338,14 @@ export default function App() {
             <div style={{ marginBottom: 32 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase" }}>
-                  {isZh ? "\u5168\u6587" : "Full Paper"}
+                  {isZh ? "全文" : "Full Paper"}
                 </div>
                 <a href={a.pdf_url} target="_blank" rel="noopener noreferrer" className="bp bs" style={{ textDecoration: "none" }}>
-                  {isZh ? "\u4e0b\u8f7dPDF" : "Download PDF"}
+                  {isZh ? "下载PDF" : "Download PDF"}
                 </a>
               </div>
               <iframe
-                src={a.pdf_url}
+                src={`${a.pdf_url}#toolbar=0&navpanes=0`} 
                 style={{ width: "100%", height: "80vh", border: "1px solid var(--border)", background: "#fff" }}
                 title="PDF Viewer"
               />
