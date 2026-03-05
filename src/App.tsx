@@ -141,10 +141,10 @@ export default function App() {
               {isZh ? "\u6295\u7a3f\u8981\u6c42" : "SUBMISSION GUIDELINES"}
             </div>
             {isZh ? (
-              <span>\u2022 \u63a5\u53d7PDF\u683c\u5f0f\uff0c\u6700\u592720MB \u2022 \u8bba\u6587\u5e94\u5305\u542b\u6807\u9898\u3001\u6458\u8981\u3001\u5173\u952e\u8bcd\u3001\u6b63\u6587\u548c\u53c2\u8003\u6587\u732e \u2022 \u63a8\u8350\u4f7f\u7528 LaTeX \u6216 Word \u5bfc\u51fa PDF \u2022 \u7f16\u8f91\u56e2\u961f\u5c06\u5728\u63d0\u4ea4\u540e\u5ba1\u6838\u60a8\u7684\u7a3f\u4ef6</span>
-            ) : (
-              <span>\u2022 PDF format only, max 20MB \u2022 Paper should include title, abstract, keywords, body, and references \u2022 Recommended: export from LaTeX or Word \u2022 The editorial team will review your manuscript after submission</span>
-            )}
+  <span>• 接受PDF格式，最大20MB • 论文应包含标题、摘要、关键词、正文和参考文献 • 推荐使用 LaTeX 或 Word 导出 PDF • 编辑团队将在提交后审核您的稿件</span>
+) : (
+  <span>• PDF format only, max 20MB • Paper should include title, abstract, keywords, body, and references • Recommended: export from LaTeX or Word • The editorial team will review your manuscript after submission</span>
+)}
           </div>
 
           {!user && (
