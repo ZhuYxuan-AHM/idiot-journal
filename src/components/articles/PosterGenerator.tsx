@@ -74,9 +74,9 @@ export function PosterGenerator({ article, t, onClose }: Props) {
                   <div style={{ fontSize: 12, color: "var(--text-faint)", letterSpacing: 4 }}>若智学刊</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "#ef4444", border: "1px solid #ef4444", padding: "2px 6px", display: "inline-block", marginBottom: 4 }}>
-                    PATHOLOGY REPORT
-                  </div>
+                 <div style={{ fontSize: 10, fontFamily: "var(--serif-cn)", color: "#ef4444", border: "1px solid #ef4444", padding: "2px 6px", display: "inline-block", marginBottom: 4 }}>
+                  诊断报告单
+                 </div>
                   <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{article.idiot_id}</div>
                 </div>
               </div>
@@ -90,7 +90,7 @@ export function PosterGenerator({ article, t, onClose }: Props) {
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-faint)", marginBottom: 4 }}>荒诞指数 (RATING)</div>
+                  <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-faint)", marginBottom: 4 }}>荒诞指数</div>
                   <div style={{ fontSize: 24, color: "var(--gold)", fontWeight: 600, lineHeight: 1 }}>
                     {article.rating || "N/A"} <span style={{ fontSize: 14 }}>/ 5.0</span>
                   </div>
@@ -109,7 +109,7 @@ export function PosterGenerator({ article, t, onClose }: Props) {
               <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 20, marginTop: 20, display: "flex", gap: 16, alignItems: "center" }}>
                 <QRCodeSVG value={shareUrl} size={64} bgColor="#0a0a0c" fgColor="#d4af37" />
                 <div>
-                  <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-faint)", marginBottom: 4 }}>SCAN TO READ FULL PAPER</div>
+                  <div style={{ fontSize: 12, fontFamily: "var(--serif-cn)", color: "var(--text-faint)", marginBottom: 4 }}>作者：{article.authors} </div>
                   <div style={{ fontSize: 10, color: "var(--text-ghost)" }}>长按识别二维码或访问：</div>
                   <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)" }}>idiotjournal.org</div>
                 </div>
