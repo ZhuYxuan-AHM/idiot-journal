@@ -47,11 +47,28 @@ export default function App() {
   const { articles, trackShare } = useArticles();
   const { editors } = useEditors();
 
+  // 自动解析分享链接的逻辑
   useEffect(() => {
-    const f = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", f, { passive: true });
-    return () => window.removeEventListener("scroll", f);
-  }, []);
+    const params = new URLSearchParams(window.location.search);
+    const sharedArticleId = params.get("article");
+
+    if (sharedArticleId && supabase) {
+      const fetchSharedArticle = async () => {
+        // 从数据库中拉取这篇文章
+        const { data, error } = await supabase
+          .from("articles")
+          .select("*")
+          .eq("idiot_id", sharedArticleId)
+          .single();
+
+        if (data) {
+          setActiveArticle(data);
+          setPage("article-detail");
+        }
+      };
+      fetchSharedArticle();
+    }
+  }, []); // 最后的 [] 表示这段代码只在页面刚打开时执行一次
 
   const goTo = (id: string) => { setPage("home"); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 100); };
 
