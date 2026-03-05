@@ -19,7 +19,7 @@ export function useEditors() {
 
     async function fetchEditors() {
       // 拉取所有具有编辑权限的用户
-      const { data } = await supabase
+      const { data } = await supabase!
         .from("profiles")
         .select("*")
         .in("badge", ["editor_in_chief", "associate_editor", "editor"]);
