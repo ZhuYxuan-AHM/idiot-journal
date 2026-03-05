@@ -12,7 +12,7 @@ export function Footer({ t }: { t: T }) {
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", letterSpacing: 1 }}>
-            \u00a9 {new Date().getFullYear()} {t.footer.copy}
+            © {new Date().getFullYear()} {t.footer.copy}
           </div>
         </div>
       </div>
