@@ -30,6 +30,11 @@ export default function App() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Reviewer dashboard
+  const [profileMode, setProfileMode] = useState<"author" | "reviewer">("author");
+  const [activeReview, setActiveReview] = useState<any | null>(null);
+  const [reviewNotes, setReviewNotes] = useState("");
+  const [reviewStatus, setReviewStatus] = useState<"accepted" | "rejected" | "revision">("revision");
 
   const t = useT(lang);
   const { user, signIn, signUp, signOut } = useAuth();
