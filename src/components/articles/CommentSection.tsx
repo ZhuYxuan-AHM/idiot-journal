@@ -3,7 +3,6 @@ import { useComments } from "@/hooks/useComments";
 import type { UserProfile } from "@/lib/types";
 import type { T } from "@/i18n";
 
-// 补充了主编和副主编的专属配色！
 const BADGE_COLORS: Record<string, { c: string; bg: string }> = {
   editor_in_chief:  { c: "#ef4444", bg: "#3a0a0a" },
   associate_editor: { c: "#f472b6", bg: "#3a1a2a" },
@@ -21,19 +20,17 @@ interface Props {
 }
 
 export function CommentSection({ articleId, user, t, onLoginRequired }: Props) {
-  const { comments, loading, postComment } = useComments(articleId);
+  const { comments, loading, postComment, deleteComment } = useComments(articleId);
   const [draft, setDraft] = useState("");
   const [posting, setPosting] = useState(false);
-  const [error, setError] = useState("");
+  const [replyTarget, setReplyTarget] = useState<{ id: string; name: string } | null>(null);
 
   const handlePost = async () => {
     if (!user) { onLoginRequired(); return; }
     if (!draft.trim()) return;
     setPosting(true);
-    setError("");
-    const { error: err } = await postComment(draft.trim());
-    if (err) setError(err);
-    else setDraft("");
+    const { error } = await postComment(draft.trim(), replyTarget?.id);
+    if (!error) { setDraft(""); setReplyTarget(null); }
     setPosting(false);
   };
 
@@ -42,107 +39,95 @@ export function CommentSection({ articleId, user, t, onLoginRequired }: Props) {
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return "just now";
     if (mins < 60) return mins + "m ago";
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return hrs + "h ago";
-    return Math.floor(hrs / 24) + "d ago";
+    return Math.floor(mins / 3600000) + "h ago";
   };
 
-  return (
-    <div style={{ marginTop: 32 }}>
-      <h3 style={{
-        fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3,
-        color: "var(--text-faint)", textTransform: "uppercase", marginBottom: 20,
-      }}>
-        {t.articles.comment} ({comments.length})
-      </h3>
+  // 渲染单条评论及其子回复
+  const renderComment = (c: any, isReply = false) => {
+    const bc = BADGE_COLORS[c.user_badge] ?? BADGE_COLORS.reader;
+    // 权限检查：是否可以删除
+    const canDelete = user && (user.id === c.user_id || ["editor", "associate_editor", "editor_in_chief"].includes(user.badge));
 
-      {/* Post box */}
-      <div style={{
-        border: "1px solid var(--border)", padding: 20, marginBottom: 24,
-        background: "var(--surface)",
+    return (
+      <div key={c.id} style={{ 
+        borderLeft: isReply ? "1px dashed var(--border)" : "2px solid var(--border)", 
+        paddingLeft: isReply ? 16 : 20, 
+        marginLeft: isReply ? 24 : 0,
+        marginBottom: 16 
       }}>
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder={user ? (t.articles.commentPlaceholder ?? "Share your thoughts...") : (t.articles.loginToComment ?? "Sign in to comment")}
-          disabled={!user}
-          maxLength={2000}
-          style={{
-            width: "100%", minHeight: 80, background: "#16161a",
-            border: "1px solid var(--gold-dim)", color: "var(--text)",
-            fontFamily: "var(--serif)", fontSize: 14, lineHeight: 1.7,
-            padding: "12px 16px", outline: "none", resize: "vertical",
-            opacity: user ? 1 : 0.5,
-          }}
-        />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-          <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>
-            {draft.length}/2000
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          <div style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", fontWeight: 600 }}>
+            {c.user_name[0]?.toUpperCase()}
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>{c.user_name}</span>
+          <span style={{ background: bc.bg, color: bc.c, padding: "1px 6px", fontSize: 8, fontFamily: "var(--mono)", letterSpacing: 1 }}>
+            {t.profile[("badge_" + c.user_badge) as keyof typeof t.profile] || c.user_badge}
           </span>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            {error && <span style={{ fontSize: 11, color: "#ef4444", fontFamily: "var(--mono)" }}>{error}</span>}
-            {!user ? (
-              <button className="bp bs" onClick={onLoginRequired}>{t.nav.login}</button>
-            ) : (
-              <button
-                className="bp bs"
-                onClick={handlePost}
-                disabled={posting || !draft.trim()}
-                style={{
-                  opacity: posting || !draft.trim() ? 0.4 : 1,
-                  background: draft.trim() ? "var(--gold)" : "transparent",
-                  color: draft.trim() ? "var(--bg)" : "var(--text-faint)",
-                }}
-              >
-                {posting ? "..." : (t.articles.postComment ?? "Post")}
+          <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{timeAgo(c.created_at)}</span>
+          
+          {/* 操作按钮组 */}
+          <div style={{ marginLeft: "auto", display: "flex", gap: 12 }}>
+            {user && (
+              <button className="nl" style={{ fontSize: 9, padding: 0 }} onClick={() => {
+                setReplyTarget({ id: c.id, name: c.user_name });
+                document.getElementById("comment-box")?.scrollIntoView({ behavior: "smooth" });
+              }}>
+                REPLY
+              </button>
+            )}
+            {canDelete && (
+              <button className="nl" style={{ fontSize: 9, padding: 0, color: "#ef4444" }} onClick={() => {
+                if (confirm(isZh ? "确定删除这条评论吗？" : "Delete this comment?")) deleteComment(c.id);
+              }}>
+                DELETE
               </button>
             )}
           </div>
         </div>
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text-dim)", margin: 0 }}>{c.content}</p>
+        
+        {/* 递归渲染属于该评论的回复 */}
+        {comments.filter(reply => reply.parent_id === c.id).map(reply => renderComment(reply, true))}
+      </div>
+    );
+  };
+
+  const isZh = t.nav.login === "登录";
+
+  return (
+    <div style={{ marginTop: 32 }}>
+      <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--text-faint)", textTransform: "uppercase", marginBottom: 20 }}>
+        {t.articles.comment} ({comments.length})
+      </h3>
+
+      {/* 发布框 */}
+      <div id="comment-box" style={{ border: "1px solid var(--border)", padding: 20, marginBottom: 24, background: "var(--surface)" }}>
+        {replyTarget && (
+          <div style={{ fontSize: 11, color: "var(--gold)", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
+            <span>Replying to @{replyTarget.name}</span>
+            <span style={{ cursor: "pointer" }} onClick={() => setReplyTarget(null)}>✕</span>
+          </div>
+        )}
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={user ? (isZh ? `作为 ${user.name} 发表看法...` : `Commenting as ${user.name}...`) : t.articles.loginToComment}
+          disabled={!user}
+          style={{ width: "100%", minHeight: 80, background: "#16161a", border: "1px solid var(--gold-dim)", color: "var(--text)", fontFamily: "var(--serif)", fontSize: 14, padding: "12px 16px", outline: "none", resize: "vertical" }}
+        />
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+          <button className="bp bs" onClick={handlePost} disabled={posting || !draft.trim()} style={{ background: draft.trim() ? "var(--gold)" : "transparent", color: draft.trim() ? "var(--bg)" : "var(--text-faint)" }}>
+            {posting ? "..." : (isZh ? "发布评论" : "Post")}
+          </button>
+        </div>
       </div>
 
-      {/* Comments list */}
+      {/* 评论列表 - 只从最顶层评论开始渲染 */}
       {loading ? (
-        <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-ghost)", padding: 20, textAlign: "center" }}>
-          Loading...
-        </div>
-      ) : comments.length === 0 ? (
-        <div style={{ fontSize: 13, color: "var(--text-ghost)", fontStyle: "italic", padding: "20px 0" }}>
-          {t.articles.noComments ?? "No comments yet. Be the first to share your thoughts."}
-        </div>
+        <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-ghost)", textAlign: "center" }}>Loading...</div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {comments.map((c) => {
-            const bc = BADGE_COLORS[c.user_badge] ?? BADGE_COLORS.reader;
-            return (
-              <div key={c.id} style={{ borderLeft: "2px solid var(--border)", paddingLeft: 20, paddingBottom: 4 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: "50%",
-                    background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.2)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 12, fontFamily: "var(--mono)", color: "var(--gold)", fontWeight: 600,
-                  }}>
-                    {c.user_name[0]?.toUpperCase()}
-                  </div>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text)" }}>{c.user_name}</span>
-                  <span style={{
-                    background: bc.bg, color: bc.c,
-                    padding: "1px 7px", fontSize: 9, fontFamily: "var(--mono)", letterSpacing: 1,
-                  }}>
-                    {/* 这里修复了头衔翻译 */}
-                    {t.profile[("badge_" + c.user_badge) as keyof typeof t.profile] || c.user_badge}
-                  </span>
-                  <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>
-                    {timeAgo(c.created_at)}
-                  </span>
-                </div>
-                <p style={{ fontSize: 14.5, lineHeight: 1.8, color: "var(--text-dim)", margin: 0 }}>
-                  {c.content}
-                </p>
-              </div>
-            );
-          })}
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {comments.filter(c => !c.parent_id).map(c => renderComment(c))}
         </div>
       )}
     </div>
