@@ -1,30 +1,26 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, PDFPage } from 'pdf-lib';
 
 export async function stampPdf(pdfUrl: string, idiotId: string, vol: string, issue: string) {
-  // 1. 获取原始 PDF 字节流
   const response = await fetch(pdfUrl);
   const existingPdfBytes = await response.arrayBuffer();
 
-  // 2. 加载 PDF 文档
   const pdfDoc = await PDFDocument.load(existingPdfBytes);
   const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const pages = pdfDoc.getPages();
 
-  // 3. 遍历每一页注入信息
-  pages.forEach((page, index) => {
+  // 👇 修复了 (page, index) 的类型定义
+  pages.forEach((page: PDFPage, index: number) => {
     const { width, height } = page.getSize();
     
-    // 注入页眉 (Top Left)
     const headerText = `I.D.I.O.T. JOURNAL | ${idiotId} | Vol. ${vol} Iss. ${issue}`;
     page.drawText(headerText, {
       x: 50,
       y: height - 35,
       size: 9,
       font: helveticaFont,
-      color: rgb(0.83, 0.69, 0.22), // 对应你的黄金色 #d4af37
+      color: rgb(0.83, 0.69, 0.22),
     });
 
-    // 注入页脚 (Bottom Right - Page Number)
     const footerText = `Page ${index + 1} of ${pages.length}`;
     const fontSize = 9;
     const textWidth = helveticaFont.widthOfTextAtSize(footerText, fontSize);
@@ -38,7 +34,6 @@ export async function stampPdf(pdfUrl: string, idiotId: string, vol: string, iss
     });
   });
 
-  // 4. 导出处理后的 Blob
   const pdfBytes = await pdfDoc.save();
   return new Blob([pdfBytes], { type: 'application/pdf' });
 }
