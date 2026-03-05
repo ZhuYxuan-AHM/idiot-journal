@@ -1,7 +1,7 @@
 export const en = {
   nav: { about: "About", scope: "Aims & Scope", submit: "Submit", preview: "Submit Paper", articles: "Articles", editorial: "Board", login: "Sign In" },
   hero: {
-    badge: "OPEN ACCESS \u00b7 PEER REVIEWED \u00b7 ISSN XXXX-XXXX",
+    badge: "OPEN ACCESS \u00b7 PEER REVIEWED",
     title: "I.D.I.O.T.",
     titleCn: "\u82e5\u667a",
     subtitle: "Interdisciplinary Discourse on Irrational Outcomes in Technology",
