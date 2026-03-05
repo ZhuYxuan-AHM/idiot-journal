@@ -39,7 +39,9 @@ export default function App() {
     }
     window.history.replaceState({}, '', url.toString());
   }, [page]);
-  
+
+  // 用于工作台的稿件状态筛选
+  const [dashboardFilter, setDashboardFilter] = useState("pending");
   const [scrollY, setScrollY] = useState(0);
   const [authMode, setAuthMode] = useState<"login" | "register" | null>(null);
   const [submitMsg, setSubmitMsg] = useState("");
@@ -497,10 +499,6 @@ export default function App() {
     const isChief = user.badge === "editor_in_chief";
 
     // 过滤分配给审稿人的稿件
-    const pendingReviews = profileMode === "editor" 
-      ? allSubmissions 
-      : allSubmissions.filter(s => s.status === "submitted" || s.status === "under_review" || s.status === "revision");
-
     return (
       <div style={{ minHeight: "100vh" }}>
         <AuthModal t={t} mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onRegister={handleRegister} />
@@ -583,17 +581,51 @@ export default function App() {
           {/* --- 4. 视图 B/C：审稿人/编辑真实全局列表 --- */}
           {(profileMode === "reviewer" || profileMode === "editor") && !activeReview && (
             <div style={{ animation: "fadeIn 0.3s" }}>
-              <div style={{ marginBottom: 24 }}>
-                <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--gold)", textTransform: "uppercase" }}>
-                  {profileMode === "editor" ? (isZh ? "全局稿件管理 (All Submissions)" : "All Submissions") : (isZh ? "待处理稿件 (Pending Actions)" : "Pending Actions")}
+              
+              {/* 顶部分类筛选栏 */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 16, flexWrap: "wrap", gap: 16 }}>
+                <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--gold)", textTransform: "uppercase", margin: 0 }}>
+                  {profileMode === "editor" ? (isZh ? "全局稿件管理" : "All Submissions") : (isZh ? "审稿队列" : "Review Queue")}
                 </h3>
+                
+                <div style={{ display: "flex", gap: 24, fontSize: 13 }}>
+                  <button className="nl" style={{ padding: 0, border: "none", background: "none", cursor: "pointer", color: dashboardFilter === "pending" ? "var(--gold)" : "var(--text-ghost)", fontWeight: dashboardFilter === "pending" ? 600 : 400 }} onClick={() => setDashboardFilter("pending")}>
+                    {isZh ? "待处理 (Pending)" : "Pending"}
+                  </button>
+                  <button className="nl" style={{ padding: 0, border: "none", background: "none", cursor: "pointer", color: dashboardFilter === "resolved" ? "#4ade80" : "var(--text-ghost)", fontWeight: dashboardFilter === "resolved" ? 600 : 400 }} onClick={() => setDashboardFilter("resolved")}>
+                    {isZh ? "已录用 (Accepted)" : "Accepted"}
+                  </button>
+                  <button className="nl" style={{ padding: 0, border: "none", background: "none", cursor: "pointer", color: dashboardFilter === "rejected" ? "#ef4444" : "var(--text-ghost)", fontWeight: dashboardFilter === "rejected" ? 600 : 400 }} onClick={() => setDashboardFilter("rejected")}>
+                    {isZh ? "已拒稿 (Rejected)" : "Rejected"}
+                  </button>
+                  <button className="nl" style={{ padding: 0, border: "none", background: "none", cursor: "pointer", color: dashboardFilter === "all" ? "var(--text)" : "var(--text-ghost)", fontWeight: dashboardFilter === "all" ? 600 : 400 }} onClick={() => setDashboardFilter("all")}>
+                    {isZh ? "全部 (All)" : "All"}
+                  </button>
+                </div>
               </div>
+
               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 48 }}>
-                {pendingReviews.length === 0 ? (
+                {allSubmissions
+                  .filter(s => s.status !== "draft") // 永远过滤掉草稿
+                  .filter(s => {
+                    if (dashboardFilter === "pending") return ["submitted", "under_review", "revision"].includes(s.status);
+                    if (dashboardFilter === "resolved") return ["accepted", "published"].includes(s.status);
+                    if (dashboardFilter === "rejected") return s.status === "rejected";
+                    return true; // "all"
+                  })
+                  .length === 0 ? (
                   <div style={{ textAlign: "center", padding: "40px", color: "var(--text-ghost)", border: "1px dashed var(--border)" }}>
-                     {isZh ? "暂无需要处理的稿件。" : "No pending submissions to review."}
+                     {isZh ? "该分类下暂无稿件。" : "No submissions in this category."}
                   </div>
-                ) : pendingReviews.map((p) => (
+                ) : allSubmissions
+                  .filter(s => s.status !== "draft")
+                  .filter(s => {
+                    if (dashboardFilter === "pending") return ["submitted", "under_review", "revision"].includes(s.status);
+                    if (dashboardFilter === "resolved") return ["accepted", "published"].includes(s.status);
+                    if (dashboardFilter === "rejected") return s.status === "rejected";
+                    return true;
+                  })
+                  .map((p) => (
                   <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, cursor: "pointer", transition: "border-color 0.3s" }}
                        onMouseEnter={(e) => e.currentTarget.style.borderColor = profileMode === "editor" ? "#d4af37" : "#a78bfa"}
                        onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
