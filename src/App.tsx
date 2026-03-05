@@ -31,7 +31,7 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   // Reviewer dashboard
-  const [profileMode, setProfileMode] = useState<"author" | "reviewer">("author");
+  const [profileMode, setProfileMode] = useState<"author" | "reviewer" | "editor">("author");
   const [activeReview, setActiveReview] = useState<any | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [reviewStatus, setReviewStatus] = useState<"accepted" | "rejected" | "revision">("revision");
@@ -412,17 +412,19 @@ export default function App() {
   if (page === "profile") {
     if (!user) { setAuthMode("login"); setPage("home"); return null; }
     const badgeMap: Record<string, { c: string; bg: string }> = {
-      editor_in_chief:  { c: "#ef4444", bg: "#3a0a0a" }, 
-      associate_editor: { c: "#f472b6", bg: "#3a1a2a" }, 
-      editor:           { c: "#d4af37", bg: "#3a2a0a" }, 
-      reviewer:         { c: "#a78bfa", bg: "#1a1a3a" }, 
-      author:           { c: "#4ade80", bg: "#0a3a1a" }, 
-      reader:           { c: "#4a9eff", bg: "#1a3a5c" }, 
+      editor_in_chief:  { c: "#ef4444", bg: "#3a0a0a" },
+      associate_editor: { c: "#f472b6", bg: "#3a1a2a" },
+      editor:           { c: "#d4af37", bg: "#3a2a0a" },
+      reviewer:         { c: "#a78bfa", bg: "#1a1a3a" },
+      author:           { c: "#4ade80", bg: "#0a3a1a" },
+      reader:           { c: "#4a9eff", bg: "#1a3a5c" },
     };
     const ub = badgeMap[user.badge] ?? badgeMap.reader;
     
-    // 判断当前用户是否有审稿权限
-    const isReviewer = user.badge === "reviewer" || user.badge === "editor";
+    // 权限判定矩阵
+    const isReviewer = ["reviewer", "editor", "associate_editor", "editor_in_chief"].includes(user.badge);
+    const isEditor = ["editor", "associate_editor", "editor_in_chief"].includes(user.badge);
+    const isChief = user.badge === "editor_in_chief";
 
     return (
       <div style={{ minHeight: "100vh" }}>
@@ -432,7 +434,7 @@ export default function App() {
           <div className="gl" style={{ marginTop: 40 }} />
           <h1 style={{ fontSize: 42, fontWeight: 300, marginBottom: 40 }}>{t.profile.title}</h1>
 
-          {/* --- 1. 顶部个人信息卡片（保持原样） --- */}
+          {/* --- 1. 顶部个人信息卡片 --- */}
           <div style={{ border: "1px solid rgba(212,175,55,0.12)", padding: "36px 40px", marginBottom: 32 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 24, marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
@@ -458,7 +460,7 @@ export default function App() {
             <LevelBar level={user.level} xp={user.xp} t={t.profile} />
           </div>
 
-          {/* --- 2. 新增：身份切换选项卡（仅审稿人/编辑可见，且不在具体审稿页时显示） --- */}
+          {/* --- 2. 身份切换选项卡（动态显示） --- */}
           {isReviewer && !activeReview && (
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
               <div className="lt">
@@ -468,11 +470,16 @@ export default function App() {
                 <button className={`lb ${profileMode === "reviewer" ? "a" : ""}`} onClick={() => setProfileMode("reviewer")} style={{ padding: "8px 24px" }}>
                   {isZh ? "审稿工作台" : "Reviewer Dashboard"}
                 </button>
+                {isEditor && (
+                  <button className={`lb ${profileMode === "editor" ? "a" : ""}`} onClick={() => setProfileMode("editor")} style={{ padding: "8px 24px" }}>
+                    {isZh ? "编辑工作台" : "Editorial Board"}
+                  </button>
+                )}
               </div>
             </div>
           )}
 
-          {/* --- 3. 视图 A：作者模式（原有的“我的投稿”列表） --- */}
+          {/* --- 3. 视图 A：作者模式 --- */}
           {profileMode === "author" && !activeReview && (
             <div style={{ animation: "fadeIn 0.3s" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -494,30 +501,35 @@ export default function App() {
             </div>
           )}
 
-          {/* --- 4. 视图 B：审稿人仪表盘（待审列表） --- */}
-          {profileMode === "reviewer" && !activeReview && (
+          {/* --- 4. 视图 B：审稿人待办列表 / 视图 C：编辑全局列表 --- */}
+          {(profileMode === "reviewer" || profileMode === "editor") && !activeReview && (
             <div style={{ animation: "fadeIn 0.3s" }}>
               <div style={{ marginBottom: 24 }}>
                 <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--gold)", textTransform: "uppercase" }}>
-                  {isZh ? "待审阅稿件 (Pending Reviews)" : "Pending Reviews"}
+                  {profileMode === "editor" 
+                    ? (isZh ? "全局稿件管理 (All Submissions)" : "All Submissions")
+                    : (isZh ? "分配给我的待审阅稿件 (Pending Reviews)" : "Pending Reviews")
+                  }
                 </h3>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 48 }}>
-                {/* 这里的演示数据后续可以替换为 Supabase 获取的真实数据 */}
                 {[
                   { id: "sub-999", title: "When LLMs Play D&D: A Study in Spontaneous Rule Forgetting", abstract: "This paper explores the spectacular failure modes of large language models when asked to maintain consistent rulesets over extended context windows, specifically focusing on tabletop RPG scenarios.", status: "under_review", submitted: "2026-03-04" },
                   { id: "sub-998", title: "The 'Yes, but' Paradox: Sycophancy disguised as Critical Thinking", abstract: "An analysis of 500 conversations where AI models agree with the user's blatantly incorrect premises while pretending to offer nuanced pushback.", status: "revision", submitted: "2026-03-02" }
                 ].map((p) => (
                   <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, cursor: "pointer", transition: "border-color 0.3s" }}
-                       onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--gold)"}
+                       onMouseEnter={(e) => e.currentTarget.style.borderColor = profileMode === "editor" ? "#d4af37" : "#a78bfa"}
                        onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                        onClick={() => setActiveReview(p)}>
                     <div style={{ flex: 1, minWidth: 300 }}>
                       <h4 style={{ fontSize: 17, fontWeight: 500, lineHeight: 1.35, marginBottom: 6, color: "var(--text)" }}>{p.title}</h4>
-                      <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{isZh ? "提交于" : "Submitted"}: {p.submitted}</div>
+                      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                        <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{isZh ? "提交于" : "Submitted"}: {p.submitted}</div>
+                        {profileMode === "editor" && <StatusBadge status={p.status as any} t={t.profile} />}
+                      </div>
                     </div>
-                    <button className="bp bs" style={{ borderColor: "var(--gold)", color: "var(--gold)" }}>
-                      {isZh ? "开始审阅" : "Review"}
+                    <button className="bp bs" style={{ borderColor: profileMode === "editor" ? "var(--gold)" : "#a78bfa", color: profileMode === "editor" ? "var(--gold)" : "#a78bfa" }}>
+                      {profileMode === "editor" ? (isZh ? "进入编辑裁决" : "Manage") : (isZh ? "开始审阅" : "Review")}
                     </button>
                   </div>
                 ))}
@@ -525,59 +537,86 @@ export default function App() {
             </div>
           )}
 
-          {/* --- 5. 视图 C：具体审稿操作界面 (Action Panel) --- */}
-          {profileMode === "reviewer" && activeReview && (
+          {/* --- 5. 操作面板 (根据身份动态变化) --- */}
+          {(profileMode === "reviewer" || profileMode === "editor") && activeReview && (
             <div style={{ marginBottom: 48, animation: "fadeIn 0.3s" }}>
               <button className="nl" style={{ marginBottom: 24, fontSize: 12, padding: 0, border: "none", background: "none" }} onClick={() => setActiveReview(null)}>
-                ← {isZh ? "返回待审列表" : "Back to Dashboard"}
+                ← {isZh ? "返回列表" : "Back to List"}
               </button>
               
-              <div style={{ border: "1px solid var(--gold-dim)", background: "rgba(212,175,55,0.02)", padding: "32px 40px" }}>
+              <div style={{ border: `1px solid ${profileMode === "editor" ? "var(--gold-dim)" : "rgba(167,139,250,0.2)"}`, background: "rgba(255,255,255,0.01)", padding: "32px 40px" }}>
+                <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: profileMode === "editor" ? "var(--gold)" : "#a78bfa", letterSpacing: 2, marginBottom: 16, textTransform: "uppercase" }}>
+                  {profileMode === "editor" ? (isZh ? "编辑裁决面板" : "Editorial Action Panel") : (isZh ? "同行评审面板" : "Peer Review Panel")}
+                </div>
                 <h2 style={{ fontSize: 24, fontWeight: 500, marginBottom: 16 }}>{activeReview.title}</h2>
                 <div style={{ fontSize: 13, lineHeight: 1.8, color: "var(--text-dim)", marginBottom: 24 }}>
                   <strong style={{ color: "var(--text)" }}>Abstract:</strong> {activeReview.abstract}
                 </div>
                 
-                <a href="#" className="bp bs" style={{ marginBottom: 32, display: "inline-block" }} onClick={(e) => { e.preventDefault(); alert(isZh ? "此处将打开 PDF 附件" : "Will open PDF attachment"); }}>
+                <a href="#" className="bp bs" style={{ marginBottom: 32, display: "inline-block" }} onClick={(e) => { e.preventDefault(); alert("Will open PDF attachment"); }}>
                   {isZh ? "查看完整 PDF 附件" : "View Full PDF"}
                 </a>
 
                 <div className="dv" style={{ margin: "24px 0" }} />
 
-                <h3 style={{ fontSize: 16, marginBottom: 16, color: "var(--gold)" }}>{isZh ? "评审意见" : "Reviewer Notes"}</h3>
+                {/* 编辑模式下，展示其他审稿人的意见汇总 */}
+                {profileMode === "editor" && (
+                  <div style={{ background: "var(--bg)", border: "1px solid var(--border)", padding: "20px", marginBottom: 24 }}>
+                    <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", color: "var(--text-dim)", marginBottom: 12 }}>{isZh ? "审稿意见汇总" : "Aggregated Reviewer Notes"}</h3>
+                    <div style={{ fontSize: 13, color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid #a78bfa", paddingLeft: 12 }}>
+                      "该论文实证充分，但对规则遗忘机制的探讨不够深入。建议接收，但需要小修..."<br/>
+                      <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginTop: 6, display: "block" }}>— Reviewer A (Recommended: Accept with Minor Revisions)</span>
+                    </div>
+                  </div>
+                )}
+
+                <h3 style={{ fontSize: 16, marginBottom: 16, color: profileMode === "editor" ? "var(--gold)" : "#a78bfa" }}>
+                  {profileMode === "editor" ? (isZh ? "编辑内部备注" : "Editorial Internal Notes") : (isZh ? "我的评审意见" : "My Review Notes")}
+                </h3>
                 <textarea 
                   className="ea" 
-                  style={{ minHeight: 160, border: "1px solid var(--border)", marginBottom: 20 }}
-                  placeholder={isZh ? "请在此输入详细的评审意见，指出理论漏洞或结构问题..." : "Enter detailed feedback..."}
+                  style={{ minHeight: profileMode === "editor" ? 80 : 160, border: "1px solid var(--border)", marginBottom: 20 }}
+                  placeholder={profileMode === "editor" ? (isZh ? "仅编辑团队可见..." : "Internal notes...") : (isZh ? "指出理论漏洞或结构问题..." : "Enter detailed feedback...")}
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
                 />
 
-                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-                  <select 
-                    className="inp" 
-                    style={{ width: "auto", minWidth: 200, cursor: "pointer" }}
-                    value={reviewStatus}
-                    onChange={(e) => setReviewStatus(e.target.value as any)}
-                  >
-                    <option value="revision">{isZh ? "要求修改 (Revision)" : "Request Revision"}</option>
-                    <option value="accepted">{isZh ? "录用 (Accept)" : "Accept"}</option>
-                    <option value="rejected">{isZh ? "拒稿 (Reject)" : "Reject"}</option>
-                  </select>
-                  
-                  <button className="bp" style={{ background: "var(--gold)", color: "var(--bg)" }} onClick={() => {
-                    alert(isZh ? `已提交: ${reviewStatus}` : `Submitted: ${reviewStatus}`);
-                    setActiveReview(null);
-                    setReviewNotes("");
-                  }}>
-                    {isZh ? "提交评审结果" : "Submit Decision"}
-                  </button>
+                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                    <select 
+                      className="inp" 
+                      style={{ width: "auto", minWidth: 200, cursor: "pointer", borderColor: profileMode === "editor" ? "var(--gold)" : "#a78bfa" }}
+                      value={reviewStatus}
+                      onChange={(e) => setReviewStatus(e.target.value as any)}
+                    >
+                      <option value="revision">{profileMode === "editor" ? (isZh ? "要求作者修改 (Request Revision)" : "Request Revision") : (isZh ? "建议修改 (Recommend Revision)" : "Recommend Revision")}</option>
+                      <option value="accepted">{profileMode === "editor" ? (isZh ? "最终录用 (Accept)" : "Accept") : (isZh ? "建议录用 (Recommend Accept)" : "Recommend Accept")}</option>
+                      <option value="rejected">{profileMode === "editor" ? (isZh ? "最终拒稿 (Reject)" : "Reject") : (isZh ? "建议拒稿 (Recommend Reject)" : "Recommend Reject")}</option>
+                    </select>
+                    
+                    <button className="bp" style={{ background: profileMode === "editor" ? "var(--gold)" : "#a78bfa", color: "var(--bg)", borderColor: "transparent" }} onClick={() => {
+                      alert(isZh ? `已提交: ${reviewStatus}` : `Submitted: ${reviewStatus}`);
+                      setActiveReview(null);
+                      setReviewNotes("");
+                    }}>
+                      {profileMode === "editor" ? (isZh ? "确认稿件状态" : "Confirm Status") : (isZh ? "提交评审建议" : "Submit Recommendation")}
+                    </button>
+                  </div>
+
+                  {/* 主编专属：录用并正式发表按钮 */}
+                  {profileMode === "editor" && isChief && reviewStatus === "accepted" && (
+                    <button className="bp" style={{ background: "#ef4444", borderColor: "#ef4444", color: "#fff", fontWeight: 600, animation: "fadeIn 0.4s" }} onClick={() => {
+                      alert(isZh ? "调用后端的 publish_submission 函数，生成 IDIOT-ID 并发布至期刊首页！" : "Publishing to Journal...");
+                      setActiveReview(null);
+                    }}>
+                      ⚡ {isZh ? "正式发表至期刊 (Publish)" : "Publish to Journal"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* 退出登录按钮（当不在具体审稿操作页时显示） */}
           {!activeReview && (
             <button className="bp bs" style={{ borderColor: "var(--text-ghost)", color: "var(--text-faint)" }} onClick={() => { signOut(); setPage("home"); }}>
               {t.profile.logout}
