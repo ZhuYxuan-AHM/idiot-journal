@@ -1152,7 +1152,7 @@ const { error: uploadErr } = await supabase.storage
           </div>
         )}
 
-        <a href="mailto:editorial@idiotjournal.org" className="bp">{t.editorial.cta}</a>
+        <a href="yuxuanzhu83@gmail.com" className="bp">{t.editorial.cta}</a>
       </div></section>
 
       <Footer t={t} />
