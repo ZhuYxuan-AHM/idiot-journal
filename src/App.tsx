@@ -477,7 +477,7 @@ export default function App() {
                 <div style={{ display: "inline-block", background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", padding: "2px 10px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1, marginBottom: 12 }}>{featured.classification}</div>
                 <h2 style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.35, marginBottom: 10 }}>{isZh ? (featured.title_zh || featured.title_en) : (featured.title_en || featured.title_zh)}</h2>
                 <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>{featured.authors} {"\u2014"} {featured.affiliation}</div>
-                <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-faint)", marginBottom: 16, maxWidth: 800 }}>{isZh ? featured.abstract_zh : featured.abstract_en}</p>
+                <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-faint)", marginBottom: 16, textAlign: "justify" }}>{isZh ? featured.abstract_zh : featured.abstract_en}</p>
                 <div style={{ display: "flex", gap: 24, fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginBottom: 4 }}>
                   {featured.model !== "N/A" && <span>{t.articles.model}: {featured.model}</span>}
                   <span>{t.articles.vol} {featured.vol}, {t.articles.iss} {featured.issue}</span>
