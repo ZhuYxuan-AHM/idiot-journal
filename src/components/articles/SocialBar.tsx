@@ -45,7 +45,7 @@ export function SocialBar({ article: a, t, onShare }: Props) {
           display: "flex", alignItems: "center", gap: 4,
         }}
       >
-        \u2709 {t.comment} <span style={{ color: "var(--text-ghost)" }}>({a.comments})</span>
+        ✉ {t.comment} <span style={{ color: "var(--text-ghost)" }}>({a.comments})</span>
       </span>
       <StarRating rating={a.rating} count={a.ratings} />
     </div>
