@@ -65,28 +65,36 @@ export function CommentSection({ articleId, user, t, onLoginRequired }: Props) {
           </span>
           <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{timeAgo(c.created_at)}</span>
           
-          {/* 操作按钮组 */}
+          {/* 修正后的操作按钮组：去除背景，支持中文 */}
           <div style={{ marginLeft: "auto", display: "flex", gap: 12 }}>
             {user && (
-              <button className="nl" style={{ fontSize: 9, padding: 0 }} onClick={() => {
-                setReplyTarget({ id: c.id, name: c.user_name });
-                document.getElementById("comment-box")?.scrollIntoView({ behavior: "smooth" });
-              }}>
-                REPLY
+              <button 
+                className="nl" 
+                style={{ fontSize: 9, padding: 0, background: "none", border: "none", cursor: "pointer" }} 
+                onClick={() => {
+                  setReplyTarget({ id: c.id, name: c.user_name });
+                  document.getElementById("comment-box")?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                {isZh ? "回复" : "REPLY"}
               </button>
             )}
             {canDelete && (
-              <button className="nl" style={{ fontSize: 9, padding: 0, color: "#ef4444" }} onClick={() => {
-                if (confirm(isZh ? "确定删除这条评论吗？" : "Delete this comment?")) deleteComment(c.id);
-              }}>
-                DELETE
+              <button 
+                className="nl" 
+                style={{ fontSize: 9, padding: 0, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }} 
+                onClick={() => {
+                  if (confirm(isZh ? "确定删除这条评论吗？" : "Delete this comment?")) deleteComment(c.id);
+                }}
+              >
+                {isZh ? "删除" : "DELETE"}
               </button>
             )}
           </div>
         </div>
         <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text-dim)", margin: 0 }}>{c.content}</p>
         
-        {/* 递归渲染属于该评论的回复 */}
+        {/* 递归渲染回复部分 */}
         {comments.filter(reply => reply.parent_id === c.id).map(reply => renderComment(reply, true))}
       </div>
     );
