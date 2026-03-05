@@ -435,35 +435,34 @@ export default function App() {
                         if (!supabase) return;
                         setIsUpdatingArticle(true);
                         try {
-                          let finalPdfUrl = a.pdf_url;
-                          
-                          // 1. 如果选中了新 PDF，先进行打标加工，再上传
-                          if (editPdf) {
-                            // 👇 核心修复：在这里调用打标工具
-                            // 注意：由于 editPdf 是 File 对象，我们需要先给它创建一个临时 URL 供 stampPdf 读取
-                            const tempUrl = URL.createObjectURL(editPdf);
-                            
-                            // 调用注入函数（使用当前文章已有的编号、卷号、期号）
-                            const stampedBlob = await stampPdf(tempUrl, a.idiot_id, a.vol, a.issue);
-                            
-                            // 释放临时 URL 节省内存
-                            URL.revokeObjectURL(tempUrl);
+                        let finalPdfUrl = a.pdf_url;
+  
+                        if (editPdf) {
+                        // 1. 👇 核心改进：删除 Storage 中的旧文件
+                        if (a.pdf_url) {
+                        // 从 URL 中提取路径（例如从 .../public/papers/published/xxx.pdf 提取 published/xxx.pdf）
+                        const oldPath = a.pdf_url.split('/public/papers/')[1];
+      if (oldPath) {
+        await supabase.storage.from("papers").remove([oldPath]);
+      }
+    }
 
-                            const fileName = `updated-${a.idiot_id}-${Date.now()}.pdf`;
-                            
-                            // 上传打过标的 Blob
-                            const { error: uploadErr } = await supabase.storage
-                              .from("papers")
-                              .upload(`published/${fileName}`, stampedBlob, { 
-                                contentType: "application/pdf",
-                                upsert: true 
-                              });
-                              
-                            if (uploadErr) throw new Error(uploadErr.message);
-                            
-                            const { data: urlData } = supabase.storage.from("papers").getPublicUrl(`published/${fileName}`);
-                            finalPdfUrl = urlData.publicUrl;
-                          }
+    // 2. 加工并上传新文件 (保持原有打标逻辑)
+    const tempUrl = URL.createObjectURL(editPdf);
+    const stampedBlob = await stampPdf(tempUrl, a.idiot_id, a.vol, a.issue);
+    URL.revokeObjectURL(tempUrl);
+
+    const fileName = `updated-${a.idiot_id}-${Date.now()}.pdf`;
+    const finalPath = `published/${fileName}`;
+    
+    const { error: uploadErr } = await supabase.storage
+      .from("papers")
+      .upload(finalPath, stampedBlob, { contentType: "application/pdf", upsert: true });
+      
+    if (uploadErr) throw uploadErr;
+    const { data: urlData } = supabase.storage.from("papers").getPublicUrl(finalPath);
+    finalPdfUrl = urlData.publicUrl;
+  }
 
                           // 2. 更新文章数据库
                           const { error: updateErr } = await supabase.from("articles").update({
