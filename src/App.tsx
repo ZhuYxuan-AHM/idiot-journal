@@ -21,7 +21,44 @@ import "@/styles/global.css";
 
 export default function App() {
   const [lang, setLang] = useState<Lang>("en");
-  const [page, setPage] = useState("home");
+  // 1. 初始化时，先看一眼网址栏里有没有带参数
+  const [page, setPageState] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("article")) return "home"; // 如果是文章分享链接，先用 home 打底，防白屏
+    return params.get("view") || "home";      // 如果网址有 ?view=xxx，就直接进入该页面，否则默认 home
+  });
+
+  // 2. 拦截并升级 setPage 函数，让它在切换页面的同时，自动修改网址！
+  const setPage = (newPage: string) => {
+    setPageState(newPage); // 更新真实的 React 页面状态
+    
+    const url = new URL(window.location.href);
+    if (newPage === "home") {
+      url.searchParams.delete("view");
+      url.searchParams.delete("article");
+    } else if (newPage === "article-detail") {
+      url.searchParams.delete("view");
+      // 详情页保留 ?article=xxx 参数，由专门的分享逻辑接管
+    } else {
+      url.searchParams.set("view", newPage);
+      url.searchParams.delete("article");
+    }
+    
+    // 无刷新地悄悄改变浏览器网址
+    window.history.pushState({}, '', url.toString());
+  };
+
+  // 3. 监听浏览器的“前进/后退”按钮，做到完美同步
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.get("article")) {
+        setPageState(params.get("view") || "home");
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
   const [scrollY, setScrollY] = useState(0);
   const [authMode, setAuthMode] = useState<"login" | "register" | null>(null);
   const [submitMsg, setSubmitMsg] = useState("");
