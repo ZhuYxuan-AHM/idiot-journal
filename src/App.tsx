@@ -298,7 +298,12 @@ export default function App() {
         <NavBar {...navProps} />
         <div style={{ paddingTop: 80, maxWidth: 800, margin: "0 auto", padding: "80px 24px 0" }}>
           <a className="nl" style={{ display: "inline-block", marginTop: 20, marginBottom: 32 }}
-            onClick={() => { setPage("articles"); setSelectedArticle(null); }}>
+            onClick={() => { 
+              setPage("articles"); 
+              setSelectedArticle(null); 
+              // 清理网址栏，去掉 ?article=xxx
+              window.history.pushState({}, '', window.location.pathname); 
+            }}>
             {t.articles.backToList}
           </a>
 
@@ -362,7 +367,16 @@ export default function App() {
             </div>
           )}
 
-          <SocialBar article={a} t={t.articles} onShare={() => trackShare(a.id)} />
+          <SocialBar article={a} t={t.articles} onShare={() => {
+            trackShare(a.id); // 保留你原有的点击追踪功能
+            // 动态生成带 ID 的专属链接并复制
+            const shareUrl = `${window.location.origin}?article=${a.idiot_id}`;
+            navigator.clipboard.writeText(shareUrl).then(() => {
+              alert(isZh ? `专属链接已复制！快去分享吧！\n${shareUrl}` : `Link copied to clipboard!\n${shareUrl}`);
+            }).catch(err => {
+              alert("复制失败，请手动复制: " + shareUrl);
+            });
+          }} />
 
           <InteractiveRating articleId={a.id} user={user} t={t} onLoginRequired={() => setAuthMode("login")} />
           <CommentSection articleId={a.id} user={user} t={t} onLoginRequired={() => setAuthMode("login")} />
