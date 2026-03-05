@@ -3,6 +3,7 @@ import { useT } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useArticles } from "@/hooks/useArticles";
 import { useEditors } from "@/hooks/useEditors";
+import { useSubmissions } from "@/hooks/useSubmissions";
 import { supabase, isLive } from "@/lib/supabase";
 import { DEMO_USER_PAPERS } from "@/lib/demo-data";
 import { NavBar } from "@/components/layout/NavBar";
@@ -41,6 +42,8 @@ export default function App() {
 
   const t = useT(lang);
   const { user, signIn, signUp, signOut } = useAuth();
+  // 获取真实稿件数据
+  const { mySubmissions, allSubmissions, refetch: refetchSubs } = useSubmissions(user?.id, user?.badge);
   const { articles, trackShare } = useArticles();
   const { editors } = useEditors();
 
@@ -430,6 +433,11 @@ export default function App() {
     const isEditor = ["editor", "associate_editor", "editor_in_chief"].includes(user.badge);
     const isChief = user.badge === "editor_in_chief";
 
+    // 过滤分配给审稿人的稿件
+    const pendingReviews = profileMode === "editor" 
+      ? allSubmissions 
+      : allSubmissions.filter(s => s.status === "submitted" || s.status === "under_review" || s.status === "revision");
+
     return (
       <div style={{ minHeight: "100vh" }}>
         <AuthModal t={t} mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onRegister={handleRegister} />
@@ -449,7 +457,7 @@ export default function App() {
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                     <span style={{ fontSize: 22, fontWeight: 500 }}>{user.name}</span>
                     <span style={{ background: ub.bg, color: ub.c, padding: "2px 10px", fontSize: 10, fontFamily: "var(--mono)", letterSpacing: 1, borderRadius: 2 }}>
-                      {t.profile[("badge_" + user.badge) as keyof typeof t.profile]}
+                      {t.profile[("badge_" + user.badge) as keyof typeof t.profile] || user.badge}
                     </span>
                   </div>
                   <div style={{ fontSize: 13, color: "var(--text-muted)", fontFamily: "var(--mono)" }}>{user.email}</div>
@@ -464,7 +472,7 @@ export default function App() {
             <LevelBar level={user.level} xp={user.xp} t={t.profile} />
           </div>
 
-          {/* --- 2. 身份切换选项卡（动态显示） --- */}
+          {/* --- 2. 身份切换选项卡 --- */}
           {isReviewer && !activeReview && (
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
               <div className="lt">
@@ -483,7 +491,7 @@ export default function App() {
             </div>
           )}
 
-          {/* --- 3. 视图 A：作者模式 --- */}
+          {/* --- 3. 视图 A：作者真实投稿列表 --- */}
           {profileMode === "author" && !activeReview && (
             <div style={{ animation: "fadeIn 0.3s" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -491,45 +499,52 @@ export default function App() {
                 <button className="bp bs" onClick={() => setPage("preview")}>{t.profile.submitNew}</button>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 48 }}>
-                {DEMO_USER_PAPERS.map((p) => (
+                {mySubmissions.length === 0 ? (
+                   <div style={{ textAlign: "center", padding: "40px", color: "var(--text-ghost)", border: "1px dashed var(--border)" }}>
+                     {isZh ? "您还没有投递过稿件。" : "You haven't submitted any papers yet."}
+                   </div>
+                ) : mySubmissions.map((p) => (
                   <div key={p.id} style={{ border: "1px solid var(--border)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
                     <div style={{ flex: 1, minWidth: 300 }}>
                       <div style={{ display: "inline-block", background: "var(--surface)", padding: "2px 8px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: 1, marginBottom: 8 }}>{p.classification}</div>
                       <h4 style={{ fontSize: 17, fontWeight: 500, lineHeight: 1.35, marginBottom: 6 }}>{p.title}</h4>
-                      <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{t.profile.submitted}: {p.submitted}</div>
+                      <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{t.profile.submitted}: {p.created_at ? p.created_at.split('T')[0] : 'Unknown'}</div>
                     </div>
-                    <StatusBadge status={p.status} t={t.profile} />
+                    <StatusBadge status={p.status as any} t={t.profile} />
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* --- 4. 视图 B：审稿人待办列表 / 视图 C：编辑全局列表 --- */}
+          {/* --- 4. 视图 B/C：审稿人/编辑真实全局列表 --- */}
           {(profileMode === "reviewer" || profileMode === "editor") && !activeReview && (
             <div style={{ animation: "fadeIn 0.3s" }}>
               <div style={{ marginBottom: 24 }}>
                 <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--gold)", textTransform: "uppercase" }}>
-                  {profileMode === "editor" 
-                    ? (isZh ? "全局稿件管理 (All Submissions)" : "All Submissions")
-                    : (isZh ? "分配给我的待审阅稿件 (Pending Reviews)" : "Pending Reviews")
-                  }
+                  {profileMode === "editor" ? (isZh ? "全局稿件管理 (All Submissions)" : "All Submissions") : (isZh ? "待处理稿件 (Pending Actions)" : "Pending Actions")}
                 </h3>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 48 }}>
-                {[
-                  { id: "sub-999", title: "When LLMs Play D&D: A Study in Spontaneous Rule Forgetting", abstract: "This paper explores the spectacular failure modes of large language models when asked to maintain consistent rulesets over extended context windows, specifically focusing on tabletop RPG scenarios.", status: "under_review", submitted: "2026-03-04", pdf_url: "https://pdfobject.com/pdf/sample.pdf" },
-                  { id: "sub-998", title: "The 'Yes, but' Paradox: Sycophancy disguised as Critical Thinking", abstract: "An analysis of 500 conversations where AI models agree with the user's blatantly incorrect premises while pretending to offer nuanced pushback.", status: "revision", submitted: "2026-03-02", pdf_url: "https://pdfobject.com/pdf/sample.pdf" }
-                ].map((p) => (
+                {pendingReviews.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px", color: "var(--text-ghost)", border: "1px dashed var(--border)" }}>
+                     {isZh ? "暂无需要处理的稿件。" : "No pending submissions to review."}
+                  </div>
+                ) : pendingReviews.map((p) => (
                   <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, cursor: "pointer", transition: "border-color 0.3s" }}
                        onMouseEnter={(e) => e.currentTarget.style.borderColor = profileMode === "editor" ? "#d4af37" : "#a78bfa"}
                        onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
-                       onClick={() => { setActiveReview(p); setShowPdf(false); }}>
+                       onClick={() => { 
+                         setActiveReview(p); 
+                         setShowPdf(false);
+                         setReviewNotes(p.reviewer_notes || ""); 
+                         setReviewStatus(p.status === 'submitted' ? 'under_review' : p.status);
+                       }}>
                     <div style={{ flex: 1, minWidth: 300 }}>
                       <h4 style={{ fontSize: 17, fontWeight: 500, lineHeight: 1.35, marginBottom: 6, color: "var(--text)" }}>{p.title}</h4>
                       <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                        <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{isZh ? "提交于" : "Submitted"}: {p.submitted}</div>
-                        {profileMode === "editor" && <StatusBadge status={p.status as any} t={t.profile} />}
+                        <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{isZh ? "提交于" : "Submitted"}: {p.created_at ? p.created_at.split('T')[0] : 'Unknown'}</div>
+                        <StatusBadge status={p.status as any} t={t.profile} />
                       </div>
                     </div>
                     <button className="bp bs" style={{ borderColor: profileMode === "editor" ? "var(--gold)" : "#a78bfa", color: profileMode === "editor" ? "var(--gold)" : "#a78bfa" }}>
@@ -541,11 +556,11 @@ export default function App() {
             </div>
           )}
 
-          {/* --- 5. 操作面板 (根据身份动态变化) --- */}
+          {/* --- 5. 真实操作面板 (直接连接 Supabase) --- */}
           {(profileMode === "reviewer" || profileMode === "editor") && activeReview && (
             <div style={{ marginBottom: 48, animation: "fadeIn 0.3s" }}>
               <button className="nl" style={{ marginBottom: 24, fontSize: 12, padding: 0, border: "none", background: "none" }} onClick={() => { setActiveReview(null); setShowPdf(false); }}>
-              ← {isZh ? "返回列表" : "Back to List"}
+                ← {isZh ? "返回列表" : "Back to List"}
               </button>
               
               <div style={{ border: `1px solid ${profileMode === "editor" ? "var(--gold-dim)" : "rgba(167,139,250,0.2)"}`, background: "rgba(255,255,255,0.01)", padding: "32px 40px" }}>
@@ -554,47 +569,28 @@ export default function App() {
                 </div>
                 <h2 style={{ fontSize: 24, fontWeight: 500, marginBottom: 16 }}>{activeReview.title}</h2>
                 <div style={{ fontSize: 13, lineHeight: 1.8, color: "var(--text-dim)", marginBottom: 24 }}>
-                  <strong style={{ color: "var(--text)" }}>Abstract:</strong> {activeReview.abstract}
+                  <strong style={{ color: "var(--text)" }}>Abstract:</strong> {activeReview.abstract_en}
                 </div>
                 
-                {/* PDF 预览切换按钮 */}
                 <button className="bp bs" style={{ marginBottom: showPdf ? 24 : 32, display: "inline-block", borderColor: showPdf ? "var(--text-ghost)" : "var(--gold)", color: showPdf ? "var(--text)" : "var(--gold)" }} onClick={() => setShowPdf(!showPdf)}>
-                  {showPdf ? (isZh ? "收起 PDF 预览" : "Hide PDF Preview") : (isZh ? "📄 在线预览完整 PDF 附件" : "📄 Preview Full PDF")}
+                  {showPdf ? (isZh ? "收起 PDF 预览" : "Hide PDF Preview") : (isZh ? "在线预览完整 PDF 附件" : "Preview Full PDF")}
                 </button>
 
-                {/* 内嵌的 PDF 阅读器窗口 */}
-                {showPdf && (
+                {showPdf && activeReview.pdf_url && (
                   <div style={{ width: "100%", height: "70vh", marginBottom: 32, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)", background: "#fff", animation: "fadeIn 0.3s" }}>
-                    <iframe 
-                      src={activeReview.pdf_url} 
-                      width="100%" 
-                      height="100%" 
-                      style={{ border: "none" }} 
-                      title="PDF Preview" 
-                    />
+                    <iframe src={activeReview.pdf_url} width="100%" height="100%" style={{ border: "none" }} title="PDF Preview" />
                   </div>
                 )}
 
                 <div className="dv" style={{ margin: "24px 0" }} />
 
-                {/* 编辑模式下，展示其他审稿人的意见汇总 */}
-                {profileMode === "editor" && (
-                  <div style={{ background: "var(--bg)", border: "1px solid var(--border)", padding: "20px", marginBottom: 24 }}>
-                    <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", color: "var(--text-dim)", marginBottom: 12 }}>{isZh ? "审稿意见汇总" : "Aggregated Reviewer Notes"}</h3>
-                    <div style={{ fontSize: 13, color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid #a78bfa", paddingLeft: 12 }}>
-                      "该论文实证充分，但对规则遗忘机制的探讨不够深入。建议接收，但需要小修..."<br/>
-                      <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginTop: 6, display: "block" }}>— Reviewer A (Recommended: Accept with Minor Revisions)</span>
-                    </div>
-                  </div>
-                )}
-
                 <h3 style={{ fontSize: 16, marginBottom: 16, color: profileMode === "editor" ? "var(--gold)" : "#a78bfa" }}>
-                  {profileMode === "editor" ? (isZh ? "编辑内部备注" : "Editorial Internal Notes") : (isZh ? "我的评审意见" : "My Review Notes")}
+                  {profileMode === "editor" ? (isZh ? "汇总统筹意见与内部备注" : "Editorial Internal Notes") : (isZh ? "我的评审意见" : "My Review Notes")}
                 </h3>
                 <textarea 
                   className="ea" 
-                  style={{ minHeight: profileMode === "editor" ? 80 : 160, border: "1px solid var(--border)", marginBottom: 20 }}
-                  placeholder={profileMode === "editor" ? (isZh ? "仅编辑团队可见..." : "Internal notes...") : (isZh ? "指出理论漏洞或结构问题..." : "Enter detailed feedback...")}
+                  style={{ minHeight: profileMode === "editor" ? 120 : 160, border: "1px solid var(--border)", marginBottom: 20 }}
+                  placeholder={profileMode === "editor" ? (isZh ? "统筹审稿意见，留下编辑裁决记录..." : "Internal notes...") : (isZh ? "指出理论漏洞或结构问题..." : "Enter detailed feedback...")}
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
                 />
@@ -607,26 +603,51 @@ export default function App() {
                       value={reviewStatus}
                       onChange={(e) => setReviewStatus(e.target.value as any)}
                     >
+                      <option value="under_review">{isZh ? "审阅中 (Under Review)" : "Under Review"}</option>
                       <option value="revision">{profileMode === "editor" ? (isZh ? "要求作者修改 (Request Revision)" : "Request Revision") : (isZh ? "建议修改 (Recommend Revision)" : "Recommend Revision")}</option>
                       <option value="accepted">{profileMode === "editor" ? (isZh ? "最终录用 (Accept)" : "Accept") : (isZh ? "建议录用 (Recommend Accept)" : "Recommend Accept")}</option>
                       <option value="rejected">{profileMode === "editor" ? (isZh ? "最终拒稿 (Reject)" : "Reject") : (isZh ? "建议拒稿 (Recommend Reject)" : "Recommend Reject")}</option>
                     </select>
                     
-                    <button className="bp" style={{ background: profileMode === "editor" ? "var(--gold)" : "#a78bfa", color: "var(--bg)", borderColor: "transparent" }} onClick={() => {
-                      alert(isZh ? `已提交: ${reviewStatus}` : `Submitted: ${reviewStatus}`);
-                      setActiveReview(null);
-                      setShowPdf(false);
-                      setReviewNotes("");
+                    <button className="bp" style={{ background: profileMode === "editor" ? "var(--gold)" : "#a78bfa", color: "var(--bg)", borderColor: "transparent" }} 
+                      onClick={async () => {
+                        if (!supabase) return;
+                        const { error } = await supabase.from('submissions').update({
+                          status: reviewStatus,
+                          reviewer_notes: reviewNotes
+                        }).eq('id', activeReview.id);
+
+                        if (error) {
+                          alert("Error: " + error.message);
+                        } else {
+                          alert(isZh ? `数据库更新成功！当前状态: ${reviewStatus}` : `Status updated in database: ${reviewStatus}`);
+                          setActiveReview(null);
+                          setShowPdf(false);
+                          setReviewNotes("");
+                          refetchSubs(); // 刷新列表
+                        }
                     }}>
-                      {profileMode === "editor" ? (isZh ? "确认稿件状态" : "Confirm Status") : (isZh ? "提交评审建议" : "Submit Recommendation")}
+                      {profileMode === "editor" ? (isZh ? "更新至数据库" : "Update Database") : (isZh ? "提交评审至数据库" : "Submit Recommendation")}
                     </button>
                   </div>
 
-                  {/* 主编专属：录用并正式发表按钮 */}
+                  {/* 调用真实 RPC 函数一键发表文章 */}
                   {profileMode === "editor" && isChief && reviewStatus === "accepted" && (
-                    <button className="bp" style={{ background: "#ef4444", borderColor: "#ef4444", color: "#fff", fontWeight: 600, animation: "fadeIn 0.4s" }} onClick={() => {
-                      alert(isZh ? "调用后端的 publish_submission 函数，生成 IDIOT-ID 并发布至期刊首页！" : "Publishing to Journal...");
-                      setActiveReview(null);
+                    <button className="bp" style={{ background: "#ef4444", borderColor: "#ef4444", color: "#fff", fontWeight: 600, animation: "fadeIn 0.4s" }} 
+                      onClick={async () => {
+                        if (!supabase) return;
+                        if (!confirm(isZh ? "确定将此稿件正式发表到期刊首页吗？此操作将生成正式期刊号。" : "Are you sure you want to publish this to the journal?")) return;
+                        
+                        const { data, error } = await supabase.rpc('publish_submission', { sub_id: activeReview.id });
+
+                        if (error) {
+                          alert("Publish Error: " + error.message);
+                        } else {
+                          alert(isZh ? `🎉 彻底成功！已生成正式期刊号: ${data}\n现在去首页看看吧！` : `🎉 Published successfully! ID: ${data}`);
+                          setActiveReview(null);
+                          setShowPdf(false);
+                          refetchSubs(); 
+                        }
                     }}>
                       ⚡ {isZh ? "正式发表至期刊 (Publish)" : "Publish to Journal"}
                     </button>
