@@ -572,7 +572,9 @@ const { error: uploadErr } = await supabase.storage
             }).catch(err => {
               alert("复制失败，请手动复制: " + shareUrl);
             });
-          }} />
+          }} 
+            onGeneratePoster={() => setShowPoster(true)}
+            />
 
           <InteractiveRating articleId={a.id} user={user} t={t} onLoginRequired={() => setAuthMode("login")} />
           <CommentSection articleId={a.id} user={user} t={t} onLoginRequired={() => setAuthMode("login")} />
