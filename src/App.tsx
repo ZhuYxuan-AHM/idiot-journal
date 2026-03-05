@@ -300,7 +300,7 @@ export default function App() {
 
           {/* Title */}
           <h1 style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.4, marginBottom: 8 }}>
-            {isZh ? a.title_zh : a.title_en}
+          {isZh ? (a.title_zh || a.title_en) : (a.title_en || a.title_zh)}
           </h1>
           {isZh && a.title_en && <h2 style={{ fontSize: 18, fontWeight: 300, color: "var(--text-muted)", marginBottom: 12, fontStyle: "italic" }}>{a.title_en}</h2>}
           {!isZh && a.title_zh && <h2 style={{ fontSize: 18, fontWeight: 300, color: "var(--text-muted)", marginBottom: 12, fontFamily: "var(--serif-cn)" }}>{a.title_zh}</h2>}
@@ -380,7 +380,7 @@ export default function App() {
               <div style={{ padding: "32px 44px 40px" }}>
                 <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{t.articles.featured}</div>
                 <div style={{ display: "inline-block", background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", padding: "2px 10px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1, marginBottom: 12 }}>{featured.classification}</div>
-                <h2 style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.35, marginBottom: 10 }}>{isZh ? featured.title_zh : featured.title_en}</h2>
+                <h2 style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.35, marginBottom: 10 }}>{isZh ? (featured.title_zh || featured.title_en) : (featured.title_en || featured.title_zh)}</h2>
                 <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>{featured.authors} {"\u2014"} {featured.affiliation}</div>
                 <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-faint)", marginBottom: 16, maxWidth: 800 }}>{isZh ? featured.abstract_zh : featured.abstract_en}</p>
                 <div style={{ display: "flex", gap: 24, fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginBottom: 4 }}>
@@ -401,7 +401,7 @@ export default function App() {
                   <div style={{ display: "inline-block", background: "var(--surface)", border: "1px solid var(--border)", padding: "2px 8px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: 1 }}>{a.classification}</div>
                   <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)", whiteSpace: "nowrap" }}>{a.date}</div>
                 </div>
-                <h3 style={{ fontSize: 19, fontWeight: 500, lineHeight: 1.35, marginBottom: 8 }}>{isZh ? a.title_zh : a.title_en}</h3>
+                <h3 style={{ fontSize: 19, fontWeight: 500, lineHeight: 1.35, marginBottom: 8 }}>{isZh ? (a.title_zh || a.title_en) : (a.title_en || a.title_zh)}</h3>
                 {a.idiot_id && <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", marginBottom: 6 }}>{a.idiot_id}</div>}
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 6 }}>{a.authors} {"\u2014"} <span style={{ fontStyle: "italic" }}>{a.affiliation}</span></div>
                 <p style={{ fontSize: 13.5, lineHeight: 1.7, color: "var(--text-faint)", maxWidth: 700 }}>{(isZh ? a.abstract_zh : a.abstract_en).slice(0, 200)}...</p>
