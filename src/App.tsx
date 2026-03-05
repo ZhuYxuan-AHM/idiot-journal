@@ -17,6 +17,7 @@ import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { LevelBar } from "@/components/profile/LevelBar";
 import type { Lang, Article } from "@/lib/types";
 import { stampPdf } from "@/lib/pdf-tools";
+import { PosterGenerator } from "@/components/articles/PosterGenerator";
 
 import "@/styles/global.css";
 
@@ -57,6 +58,7 @@ export default function App() {
   const [authMode, setAuthMode] = useState<"login" | "register" | null>(null);
   const [submitMsg, setSubmitMsg] = useState("");
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [showPoster, setShowPoster] = useState(false);
 
   // Submit form state
   const [subForm, setSubForm] = useState({ title: "", authors: "", affiliation: "", abstract_en: "", abstract_zh: "", keywords: "", classification: "Human Bewilderment" });
@@ -337,6 +339,15 @@ export default function App() {
       <div style={{ minHeight: "100vh" }}>
         <AuthModal t={t} mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onRegister={handleRegister} />
         <NavBar {...navProps} />
+        {/* 当 showPoster 为 true 时渲染海报组件 */}
+        {showPoster && (
+          <PosterGenerator 
+            article={a} 
+            t={t.articles} 
+            onClose={() => setShowPoster(false)} 
+          />
+        )}
+        
         <div style={{ paddingTop: 80, maxWidth: 800, margin: "0 auto", padding: "80px 24px 0" }}>
           <a className="nl" style={{ display: "inline-block", marginTop: 20, marginBottom: 32 }}
             onClick={() => { 
