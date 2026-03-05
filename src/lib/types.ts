@@ -4,7 +4,7 @@ export type Lang = "en" | "zh";
 
 export type ArticleStatus = "draft" | "under_review" | "revision" | "accepted" | "rejected" | "published";
 
-export type UserBadge = "reader" | "author" | "reviewer" | "editor";
+export type UserBadge = "reader" | "author" | "reviewer" | "editor" | "associate_editor" | "editor_in_chief";
 
 export interface Article {
   id: string;
