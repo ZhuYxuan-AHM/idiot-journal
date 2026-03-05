@@ -69,7 +69,14 @@ export default function App() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [reviewStatus, setReviewStatus] = useState<string>("revision");
   const [showPdf, setShowPdf] = useState(false);
-
+  
+  //  为主编修改文章新增的状态
+  const [isEditingArticle, setIsEditingArticle] = useState(false);
+  const [editForm, setEditForm] = useState({ title_en: "", title_zh: "", authors: "", affiliation: "", abstract_en: "", abstract_zh: "", keywords: "" });
+  const [editPdf, setEditPdf] = useState<File | null>(null);
+  const [isUpdatingArticle, setIsUpdatingArticle] = useState(false);
+  const editFileRef = useRef<HTMLInputElement>(null);
+  
   const t = useT(lang);
   const { user, signIn, signUp, signOut } = useAuth();
   // 获取真实稿件数据
@@ -340,42 +347,127 @@ export default function App() {
             {t.articles.backToList}
           </a>
           
-          {/* 主编专属：封面文章管理控制台 */}
+          {/* 主编专属：文章管理控制台 */}
           {user?.badge === "editor_in_chief" && (
-            <div style={{ marginBottom: 32, padding: "16px 24px", background: "rgba(239, 68, 68, 0.05)", border: "1px dashed rgba(239, 68, 68, 0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-              <div style={{ fontSize: 13, color: "#ef4444", fontFamily: "var(--mono)", fontWeight: 600, letterSpacing: 1 }}>
-                ⚡ {isZh ? "主编管理台 (EIC Console)" : "EIC Console"}
+            <>
+              <div style={{ marginBottom: isEditingArticle ? 16 : 32, padding: "16px 24px", background: "rgba(239, 68, 68, 0.05)", border: "1px dashed rgba(239, 68, 68, 0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+                <div style={{ fontSize: 13, color: "#ef4444", fontFamily: "var(--mono)", fontWeight: 600, letterSpacing: 1 }}>
+                  ⚡ {isZh ? "主编管理台 (EIC Console)" : "EIC Console"}
+                </div>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  <button 
+                    className="bp bs" 
+                    style={{ borderColor: "#ef4444", color: "#ef4444" }}
+                    onClick={() => {
+                      if (!isEditingArticle) {
+                        // 展开时，自动填入当前文章的数据
+                        setEditForm({
+                          title_en: a.title_en, title_zh: a.title_zh,
+                          authors: a.authors, affiliation: a.affiliation,
+                          abstract_en: a.abstract_en, abstract_zh: a.abstract_zh,
+                          keywords: a.keywords
+                        });
+                        setEditPdf(null);
+                      }
+                      setIsEditingArticle(!isEditingArticle);
+                    }}
+                  >
+                    {isEditingArticle ? (isZh ? "取消修改" : "Cancel Edit") : (isZh ? "✎ 修改信息与PDF" : "✎ Edit Info & PDF")}
+                  </button>
+                  <button 
+                    className="bp bs" 
+                    style={{ 
+                      background: a.featured ? "#ef4444" : "transparent",
+                      borderColor: "#ef4444", 
+                      color: a.featured ? "#fff" : "#ef4444",
+                      fontWeight: a.featured ? 600 : 400
+                    }}
+                    onClick={async () => {
+                      if (!supabase) return;
+                      if (a.featured) {
+                        alert(isZh ? "该文章已经是封面文章了！" : "This is already the featured article!");
+                        return;
+                      }
+                      if (!confirm(isZh ? "确定将此文章设为最新一期的封面文章吗？\n(这将会替换掉当前的封面文章)" : "Set this as the featured article? (Will replace the current one)")) return;
+                      
+                      const { error } = await supabase.rpc('set_featured_article', { target_article_id: a.id });
+                      if (error) alert("Error: " + error.message);
+                      else { alert(isZh ? "🎉 封面文章设置成功！" : "🎉 Featured article updated!"); window.location.reload(); }
+                    }}
+                  >
+                    {a.featured ? (isZh ? "★ 当前封面文章" : "★ Featured Article") : (isZh ? "☆ 设为封面文章" : "☆ Set Featured")}
+                  </button>
+                </div>
               </div>
-              <button 
-                className="bp bs" 
-                style={{ 
-                  background: a.featured ? "#ef4444" : "transparent",
-                  borderColor: "#ef4444", 
-                  color: a.featured ? "#fff" : "#ef4444",
-                  fontWeight: a.featured ? 600 : 400
-                }}
-                onClick={async () => {
-                  if (!supabase) return;
-                  if (a.featured) {
-                    alert(isZh ? "该文章已经是封面文章了！" : "This is already the featured article!");
-                    return;
-                  }
-                  if (!confirm(isZh ? "确定将此文章设为最新一期的封面文章吗？\n(这将会替换掉当前的封面文章)" : "Set this as the featured article? (Will replace the current one)")) return;
-                  
-                  // 调用后端的安全 RPC 函数
-                  const { error } = await supabase.rpc('set_featured_article', { target_article_id: a.id });
-                  
-                  if (error) {
-                    alert("Error: " + error.message);
-                  } else {
-                    alert(isZh ? "封面文章设置成功！" : "Featured article updated!");
-                    window.location.reload(); // 刷新页面以拉取最新状态
-                  }
-                }}
-              >
-                {a.featured ? (isZh ? "★ 当前封面文章 (Featured)" : "★ Featured Article") : (isZh ? "☆ 设为封面文章 (Set Featured)" : "☆ Set Featured")}
-              </button>
-            </div>
+
+              {/* 修改文章的隐藏表单 */}
+              {isEditingArticle && (
+                <div style={{ background: "rgba(20, 20, 25, 0.9)", border: "1px solid var(--gold-dim)", padding: "24px", marginBottom: 32, animation: "fadeIn 0.3s" }}>
+                  <h3 style={{ fontSize: 16, color: "var(--gold)", marginBottom: 16, fontFamily: "var(--mono)" }}>{isZh ? "修改已发表文章数据" : "Edit Published Data"}</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <input className="inp" value={editForm.title_en} onChange={e => setEditForm({...editForm, title_en: e.target.value})} placeholder={isZh ? "英文标题" : "Title (EN)"} />
+                    <input className="inp" value={editForm.title_zh} onChange={e => setEditForm({...editForm, title_zh: e.target.value})} placeholder={isZh ? "中文标题" : "Title (ZH)"} />
+                    <input className="inp" value={editForm.authors} onChange={e => setEditForm({...editForm, authors: e.target.value})} placeholder={isZh ? "作者" : "Authors"} />
+                    <input className="inp" value={editForm.affiliation} onChange={e => setEditForm({...editForm, affiliation: e.target.value})} placeholder={isZh ? "机构/单位" : "Affiliation"} />
+                    <textarea className="ea" style={{ minHeight: 120, border: "1px solid var(--gold-dim)" }} value={editForm.abstract_en} onChange={e => setEditForm({...editForm, abstract_en: e.target.value})} placeholder={isZh ? "英文摘要" : "Abstract (EN)"} />
+                    <textarea className="ea" style={{ minHeight: 120, border: "1px solid var(--gold-dim)" }} value={editForm.abstract_zh} onChange={e => setEditForm({...editForm, abstract_zh: e.target.value})} placeholder={isZh ? "中文摘要" : "Abstract (ZH)"} />
+                    <input className="inp" value={editForm.keywords} onChange={e => setEditForm({...editForm, keywords: e.target.value})} placeholder={isZh ? "关键词" : "Keywords"} />
+                    
+                    {/* PDF 替换拖拽框 */}
+                    <div 
+                      style={{ border: "1px dashed var(--gold-dim)", padding: "20px", textAlign: "center", cursor: "pointer", background: "rgba(0,0,0,0.2)" }} 
+                      onClick={() => editFileRef.current?.click()}
+                    >
+                      <input ref={editFileRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) setEditPdf(f); }} />
+                      {editPdf ? (
+                        <span style={{ color: "var(--gold)", fontFamily: "var(--mono)", fontSize: 13 }}>✓ {editPdf.name}</span>
+                      ) : (
+                        <span style={{ color: "var(--text-ghost)", fontSize: 13 }}>{isZh ? "↑ 点击上传新 PDF 替换（若不选则保留原 PDF）" : "↑ Click to upload new PDF (leave empty to keep current)"}</span>
+                      )}
+                    </div>
+
+                    <button 
+                      className="bp" 
+                      style={{ marginTop: 8, background: "var(--gold)", color: "var(--bg)", borderColor: "var(--gold)", opacity: isUpdatingArticle ? 0.5 : 1 }} 
+                      disabled={isUpdatingArticle} 
+                      onClick={async () => {
+                        if (!supabase) return;
+                        setIsUpdatingArticle(true);
+                        try {
+                          let finalPdfUrl = a.pdf_url;
+                          // 1. 如果选中了新 PDF，先上传到云端
+                          if (editPdf) {
+                            const fileName = `updated-${Date.now()}-${editPdf.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+                            const { error: uploadErr } = await supabase.storage.from("papers").upload(fileName, editPdf, { contentType: "application/pdf" });
+                            if (uploadErr) throw new Error(uploadErr.message);
+                            const { data: urlData } = supabase.storage.from("papers").getPublicUrl(fileName);
+                            finalPdfUrl = urlData.publicUrl;
+                          }
+
+                          // 2. 更新文章数据库
+                          const { error: updateErr } = await supabase.from("articles").update({
+                            title_en: editForm.title_en, title_zh: editForm.title_zh,
+                            authors: editForm.authors, affiliation: editForm.affiliation,
+                            abstract_en: editForm.abstract_en, abstract_zh: editForm.abstract_zh,
+                            keywords: editForm.keywords, pdf_url: finalPdfUrl
+                          }).eq("id", a.id);
+
+                          if (updateErr) throw new Error(updateErr.message);
+                          
+                          alert(isZh ? "文章信息与附件更新成功！" : "Article updated successfully!");
+                          window.location.reload(); // 刷新页面展示最新内容
+                        } catch (e: any) {
+                          alert("Error: " + e.message);
+                        }
+                        setIsUpdatingArticle(false);
+                      }}
+                    >
+                      {isUpdatingArticle ? "..." : (isZh ? "确认保存修改" : "Save Changes")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Preprint header bar */}
