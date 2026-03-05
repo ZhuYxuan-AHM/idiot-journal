@@ -5,7 +5,7 @@ export const en = {
     title: "I.D.I.O.T.",
     titleCn: "\u82e5\u667a",
     subtitle: "Interdisciplinary Discourse on Irrational Outcomes in Technology",
-    desc: "An international open-access academic journal dedicated to the rigorous study of irrational, absurd, and counterproductive behaviors \u2014 from humans bewildered by technology, to AI systems bewildering humans, to organizations making spectacularly foolish decisions in between.",
+    desc: "An international open-access academic journal focused on the rigorous study of irrational, absurd, and counterproductive behaviors, including human responses to technology, AI systems that confuse users, and organizational decision-making.",
     cta: "Submit & Preview", cta2: "Browse Articles",
   },
   about: {
