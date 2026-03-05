@@ -339,6 +339,44 @@ export default function App() {
             }}>
             {t.articles.backToList}
           </a>
+          
+          {/* 主编专属：封面文章管理控制台 */}
+          {user?.badge === "editor_in_chief" && (
+            <div style={{ marginBottom: 32, padding: "16px 24px", background: "rgba(239, 68, 68, 0.05)", border: "1px dashed rgba(239, 68, 68, 0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+              <div style={{ fontSize: 13, color: "#ef4444", fontFamily: "var(--mono)", fontWeight: 600, letterSpacing: 1 }}>
+                ⚡ {isZh ? "主编管理台 (EIC Console)" : "EIC Console"}
+              </div>
+              <button 
+                className="bp bs" 
+                style={{ 
+                  background: a.featured ? "#ef4444" : "transparent",
+                  borderColor: "#ef4444", 
+                  color: a.featured ? "#fff" : "#ef4444",
+                  fontWeight: a.featured ? 600 : 400
+                }}
+                onClick={async () => {
+                  if (!supabase) return;
+                  if (a.featured) {
+                    alert(isZh ? "该文章已经是封面文章了！" : "This is already the featured article!");
+                    return;
+                  }
+                  if (!confirm(isZh ? "确定将此文章设为最新一期的封面文章吗？\n(这将会替换掉当前的封面文章)" : "Set this as the featured article? (Will replace the current one)")) return;
+                  
+                  // 调用后端的安全 RPC 函数
+                  const { error } = await supabase.rpc('set_featured_article', { target_article_id: a.id });
+                  
+                  if (error) {
+                    alert("Error: " + error.message);
+                  } else {
+                    alert(isZh ? "封面文章设置成功！" : "Featured article updated!");
+                    window.location.reload(); // 刷新页面以拉取最新状态
+                  }
+                }}
+              >
+                {a.featured ? (isZh ? "★ 当前封面文章 (Featured)" : "★ Featured Article") : (isZh ? "☆ 设为封面文章 (Set Featured)" : "☆ Set Featured")}
+              </button>
+            </div>
+          )}
 
           {/* Preprint header bar */}
           <div style={{ background: "rgba(212,175,55,0.04)", border: "1px solid rgba(212,175,55,0.15)", padding: "16px 24px", marginBottom: 40, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }} className="preprint-meta">
