@@ -909,72 +909,78 @@ export default function App() {
                   {profileMode === "editor" && isChief && reviewStatus === "accepted" && (
                     <button className="bp" style={{ background: "#ef4444", borderColor: "#ef4444", color: "#fff", fontWeight: 600, animation: "fadeIn 0.4s" }} 
                       onClick={async () => {
-                        // 1. 安全锁：防止重复点击和确认意图
+                        // 0. 安全守卫：满足 TS 检查，确保基础对象存在
+                        if (!supabase || !activeReview) return;
+                        if (!confirm(isZh ? "确定将此稿件正式发表吗？系统将自动注入页眉页脚并生成期刊号。" : "Confirm publication? System will inject headers/footers and generate ID.")) return;
+
                         setSubmitting(true); 
                         try {
-                        // 2. Stage 1: 数据库发表
-                      // 调用 Supabase RPC 生成正式 ID，此时 submissions 表状态变为 published，articles 表生成新行
-                        const { data: newIdiotId, error: publishError } = await supabase.rpc('publish_submission', { 
-                        sub_id: activeReview.id,
-                        p_vol: "1", 
-                        p_issue: "1" 
-                        });
+                          // ──────── Stage 1: 数据库发表 ────────
+                          const { data: newIdiotId, error: publishError } = await supabase.rpc('publish_submission', { 
+                            sub_id: activeReview.id,
+                            p_vol: "1", 
+                            p_issue: "1" 
+                          });
 
-                        if (publishError) throw new Error("Database Publish Failed: " + publishError.message);
+                          if (publishError) throw new Error("Database Publish Failed: " + publishError.message);
+                          if (!newIdiotId) throw new Error("Failed to generate Idiot ID");
 
-                        // 3. Stage 2: 准备 PDF 加工
-                        // 默认使用原始链接，以防后续加工失败时至少文章还能打开
-                        let finalPdfUrl = activeReview.pdf_url;
-                        try {
-                          // 调用之前写的工具函数，在内存中生成带页眉的 PDF
-                        const stampedBlob = await stampPdf(activeReview.pdf_url, newIdiotId, "1", "1");
-    
-                          // 安全校验：防止生成空文件
-                        if (stampedBlob.size < 100) throw new Error("Generated PDF is too small.");
+                          let finalPdfUrl = activeReview.pdf_url; 
+                          
+                          // ──────── Stage 2 & 3: PDF 注入与上传 ────────
+                          try {
+                            // 调用工具函数注入页眉页脚
+                            const stampedBlob = await stampPdf(activeReview.pdf_url, newIdiotId, "1", "1");
+                            
+                            if (stampedBlob.size < 100) throw new Error("Generated PDF is too small.");
 
-                          // Stage 3: 安全上传正式版
-                          // 注意路径：存放在 'published/' 文件夹下，文件名带上正式 ID
-                          // 这样做绝对不会覆盖作者在根目录下的原始投稿文件
-                        const finalPath = `published/final-${newIdiotId}.pdf`; 
-                        const { error: uploadErr } = await supabase.storage
-                        .from("papers")
-                        .upload(finalPath, stampedBlob, { 
-                         contentType: "application/pdf", 
-                         upsert: true 
-                     });
+                            const finalPath = `published/final-${newIdiotId}.pdf`; 
+                            
+                            // 👇 这里再次检查，彻底消除 Vercel 的 TS18047 报错
+                            if (!supabase) throw new Error("Connection lost during process");
 
-                        if (uploadErr) throw uploadErr;
+                            // 上传打过标的正式版 PDF
+                            const { error: uploadErr } = await supabase.storage
+                              .from("papers")
+                              .upload(finalPath, stampedBlob, { 
+                                contentType: "application/pdf", 
+                                upsert: true 
+                              });
 
-                        // 获取正式版的公开访问链接
-                        const { data: urlData } = supabase.storage.from("papers").getPublicUrl(finalPath);
-                        finalPdfUrl = urlData.publicUrl;
-                      // Stage 4: 更新文章表中的 PDF 链接
-                        const { error: updateErr } = await supabase
-                        .from("articles")
-                        .update({ pdf_url: finalPdfUrl })
-                        .eq("idiot_id", newIdiotId);
-    
-                        if (updateErr) throw updateErr;
+                            if (uploadErr) throw uploadErr;
 
-                        } catch (pdfErr: any) {
-                        // PDF 加工失败的容错：文章已发，仅提示 PDF 问题
-                        console.error("PDF Stamping/Upload Warning:", pdfErr);
-                         alert(isZh 
-                        ? `提示：文章已发表为 ${newIdiotId}，但 PDF 页眉注入失败。` 
-                        : `Note: Article published as ${newIdiotId}, but PDF stamping failed.`);
+                            // 获取正式版公开链接
+                            const { data: urlData } = supabase.storage.from("papers").getPublicUrl(finalPath);
+                            if (!urlData) throw new Error("Could not get public URL");
+                            finalPdfUrl = urlData.publicUrl;
+
+                            // ──────── Stage 4: 更新文章表链接 ────────
+                            const { error: updateErr } = await supabase
+                              .from("articles")
+                              .update({ pdf_url: finalPdfUrl })
+                              .eq("idiot_id", newIdiotId);
+                            
+                            if (updateErr) throw updateErr;
+
+                          } catch (pdfErr: any) {
+                            // PDF 加工失败的容错提示
+                            console.error("PDF Stamping Warning:", pdfErr);
+                            alert(isZh 
+                              ? `提示：文章已发表为 ${newIdiotId}，但 PDF 页眉注入失败。` 
+                              : `Note: Article published as ${newIdiotId}, but PDF stamping failed.`);
+                          }
+
+                          // ──────── Stage 5: 成功结束 ────────
+                          alert(isZh ? `🎉 正式发表成功！期刊号: ${newIdiotId}` : `🎉 Published successfully! ID: ${newIdiotId}`);
+                          setActiveReview(null);
+                          setShowPdf(false);
+                          refetchSubs(); // 刷新列表，该稿件会从“待处理”消失
+
+                        } catch (err: any) {
+                          alert("Critical Error: " + err.message);
+                        } finally {
+                          setSubmitting(false); // 解锁按钮
                         }
-
-                      // Stage 5: 成功结束
-                      alert(isZh ? `🎉 正式发表成功！期刊号: ${newIdiotId}` : `🎉 Published successfully! ID: ${newIdiotId}`);
-                      setActiveReview(null); // 关闭评审面板
-                      setShowPdf(false);    // 关闭预览
-                      refetchSubs();        // 刷新列表，该稿件会从“待处理”消失
-                      } catch (err: any) {
-                      // 捕获数据库发表阶段的严重错误
-                      alert("Critical Error: " + err.message);
-                      } finally {
-                      setSubmitting(false); // 解锁按钮
-                      }    
                     }}>
                       ⚡ {isZh ? "正式发表至期刊 (Publish)" : "Publish to Journal"}
                     </button>
