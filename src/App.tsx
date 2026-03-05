@@ -20,8 +20,18 @@ import type { Lang, Article } from "@/lib/types";
 import "@/styles/global.css";
 
 export default function App() {
-  const [lang, setLang] = useState<Lang>("en");
-  // 1. 初始化时，直接从网址读取要去的页面
+  // 1. 初始化语言时，先读取浏览器的“本地记忆”
+  const [lang, setLang] = useState<Lang>(() => {
+    const saved = localStorage.getItem("idiot_language");
+    return (saved === "zh" || saved === "en") ? saved : "en";
+  });
+
+  // 2. 只要语言切换了，就立刻写进本地记忆里
+  useEffect(() => {
+    localStorage.setItem("idiot_language", lang);
+  }, [lang]);
+
+  // 3. 初始化时，直接从网址读取要去的页面
   const [page, setPage] = useState<string>(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("article")) return "home"; // 如果是文章详情，先用 home 打底交由另一个 useEffect 处理
