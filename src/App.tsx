@@ -408,7 +408,7 @@ export default function App() {
     );
   }
 
-  /* ═══════════════ PROFILE PAGE ═══════════════ */
+ /* ═══════════════ PROFILE PAGE ═══════════════ */
   if (page === "profile") {
     if (!user) { setAuthMode("login"); setPage("home"); return null; }
     const badgeMap: Record<string, { c: string; bg: string }> = {
@@ -418,6 +418,9 @@ export default function App() {
       reader: { c: "#4a9eff", bg: "#1a3a5c" },
     };
     const ub = badgeMap[user.badge] ?? badgeMap.reader;
+    
+    // 判断当前用户是否有审稿权限
+    const isReviewer = user.badge === "reviewer" || user.badge === "editor";
 
     return (
       <div style={{ minHeight: "100vh" }}>
@@ -427,6 +430,7 @@ export default function App() {
           <div className="gl" style={{ marginTop: 40 }} />
           <h1 style={{ fontSize: 42, fontWeight: 300, marginBottom: 40 }}>{t.profile.title}</h1>
 
+          {/* --- 1. 顶部个人信息卡片（保持原样） --- */}
           <div style={{ border: "1px solid rgba(212,175,55,0.12)", padding: "36px 40px", marginBottom: 32 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 24, marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
@@ -452,25 +456,135 @@ export default function App() {
             <LevelBar level={user.level} xp={user.xp} t={t.profile} />
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--text-faint)", textTransform: "uppercase" }}>{t.profile.papers}</h3>
-            <button className="bp bs" onClick={() => setPage("preview")}>{t.profile.submitNew}</button>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 48 }}>
-            {DEMO_USER_PAPERS.map((p) => (
-              <div key={p.id} style={{ border: "1px solid var(--border)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-                <div style={{ flex: 1, minWidth: 300 }}>
-                  <div style={{ display: "inline-block", background: "var(--surface)", padding: "2px 8px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: 1, marginBottom: 8 }}>{p.classification}</div>
-                  <h4 style={{ fontSize: 17, fontWeight: 500, lineHeight: 1.35, marginBottom: 6 }}>{p.title}</h4>
-                  <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{t.profile.submitted}: {p.submitted}</div>
-                </div>
-                <StatusBadge status={p.status} t={t.profile} />
+          {/* --- 2. 新增：身份切换选项卡（仅审稿人/编辑可见，且不在具体审稿页时显示） --- */}
+          {isReviewer && !activeReview && (
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
+              <div className="lt">
+                <button className={`lb ${profileMode === "author" ? "a" : ""}`} onClick={() => setProfileMode("author")} style={{ padding: "8px 24px" }}>
+                  {isZh ? "作者工作台" : "Author Dashboard"}
+                </button>
+                <button className={`lb ${profileMode === "reviewer" ? "a" : ""}`} onClick={() => setProfileMode("reviewer")} style={{ padding: "8px 24px" }}>
+                  {isZh ? "审稿工作台" : "Reviewer Dashboard"}
+                </button>
               </div>
-            ))}
-          </div>
-          <button className="bp bs" style={{ borderColor: "var(--text-ghost)", color: "var(--text-faint)" }} onClick={() => { signOut(); setPage("home"); }}>{t.profile.logout}</button>
+            </div>
+          )}
+
+          {/* --- 3. 视图 A：作者模式（原有的“我的投稿”列表） --- */}
+          {profileMode === "author" && !activeReview && (
+            <div style={{ animation: "fadeIn 0.3s" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--text-faint)", textTransform: "uppercase" }}>{t.profile.papers}</h3>
+                <button className="bp bs" onClick={() => setPage("preview")}>{t.profile.submitNew}</button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 48 }}>
+                {DEMO_USER_PAPERS.map((p) => (
+                  <div key={p.id} style={{ border: "1px solid var(--border)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 300 }}>
+                      <div style={{ display: "inline-block", background: "var(--surface)", padding: "2px 8px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: 1, marginBottom: 8 }}>{p.classification}</div>
+                      <h4 style={{ fontSize: 17, fontWeight: 500, lineHeight: 1.35, marginBottom: 6 }}>{p.title}</h4>
+                      <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{t.profile.submitted}: {p.submitted}</div>
+                    </div>
+                    <StatusBadge status={p.status} t={t.profile} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* --- 4. 视图 B：审稿人仪表盘（待审列表） --- */}
+          {profileMode === "reviewer" && !activeReview && (
+            <div style={{ animation: "fadeIn 0.3s" }}>
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--gold)", textTransform: "uppercase" }}>
+                  {isZh ? "待审阅稿件 (Pending Reviews)" : "Pending Reviews"}
+                </h3>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 48 }}>
+                {/* 这里的演示数据后续可以替换为 Supabase 获取的真实数据 */}
+                {[
+                  { id: "sub-999", title: "When LLMs Play D&D: A Study in Spontaneous Rule Forgetting", abstract: "This paper explores the spectacular failure modes of large language models when asked to maintain consistent rulesets over extended context windows, specifically focusing on tabletop RPG scenarios.", status: "under_review", submitted: "2026-03-04" },
+                  { id: "sub-998", title: "The 'Yes, but' Paradox: Sycophancy disguised as Critical Thinking", abstract: "An analysis of 500 conversations where AI models agree with the user's blatantly incorrect premises while pretending to offer nuanced pushback.", status: "revision", submitted: "2026-03-02" }
+                ].map((p) => (
+                  <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, cursor: "pointer", transition: "border-color 0.3s" }}
+                       onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--gold)"}
+                       onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                       onClick={() => setActiveReview(p)}>
+                    <div style={{ flex: 1, minWidth: 300 }}>
+                      <h4 style={{ fontSize: 17, fontWeight: 500, lineHeight: 1.35, marginBottom: 6, color: "var(--text)" }}>{p.title}</h4>
+                      <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{isZh ? "提交于" : "Submitted"}: {p.submitted}</div>
+                    </div>
+                    <button className="bp bs" style={{ borderColor: "var(--gold)", color: "var(--gold)" }}>
+                      {isZh ? "开始审阅" : "Review"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* --- 5. 视图 C：具体审稿操作界面 (Action Panel) --- */}
+          {profileMode === "reviewer" && activeReview && (
+            <div style={{ marginBottom: 48, animation: "fadeIn 0.3s" }}>
+              <button className="nl" style={{ marginBottom: 24, fontSize: 12, padding: 0, border: "none", background: "none" }} onClick={() => setActiveReview(null)}>
+                ← {isZh ? "返回待审列表" : "Back to Dashboard"}
+              </button>
+              
+              <div style={{ border: "1px solid var(--gold-dim)", background: "rgba(212,175,55,0.02)", padding: "32px 40px" }}>
+                <h2 style={{ fontSize: 24, fontWeight: 500, marginBottom: 16 }}>{activeReview.title}</h2>
+                <div style={{ fontSize: 13, lineHeight: 1.8, color: "var(--text-dim)", marginBottom: 24 }}>
+                  <strong style={{ color: "var(--text)" }}>Abstract:</strong> {activeReview.abstract}
+                </div>
+                
+                <a href="#" className="bp bs" style={{ marginBottom: 32, display: "inline-block" }} onClick={(e) => { e.preventDefault(); alert(isZh ? "此处将打开 PDF 附件" : "Will open PDF attachment"); }}>
+                  {isZh ? "查看完整 PDF 附件" : "View Full PDF"}
+                </a>
+
+                <div className="dv" style={{ margin: "24px 0" }} />
+
+                <h3 style={{ fontSize: 16, marginBottom: 16, color: "var(--gold)" }}>{isZh ? "评审意见" : "Reviewer Notes"}</h3>
+                <textarea 
+                  className="ea" 
+                  style={{ minHeight: 160, border: "1px solid var(--border)", marginBottom: 20 }}
+                  placeholder={isZh ? "请在此输入详细的评审意见，指出理论漏洞或结构问题..." : "Enter detailed feedback..."}
+                  value={reviewNotes}
+                  onChange={(e) => setReviewNotes(e.target.value)}
+                />
+
+                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+                  <select 
+                    className="inp" 
+                    style={{ width: "auto", minWidth: 200, cursor: "pointer" }}
+                    value={reviewStatus}
+                    onChange={(e) => setReviewStatus(e.target.value as any)}
+                  >
+                    <option value="revision">{isZh ? "要求修改 (Revision)" : "Request Revision"}</option>
+                    <option value="accepted">{isZh ? "录用 (Accept)" : "Accept"}</option>
+                    <option value="rejected">{isZh ? "拒稿 (Reject)" : "Reject"}</option>
+                  </select>
+                  
+                  <button className="bp" style={{ background: "var(--gold)", color: "var(--bg)" }} onClick={() => {
+                    alert(isZh ? `已提交: ${reviewStatus}` : `Submitted: ${reviewStatus}`);
+                    setActiveReview(null);
+                    setReviewNotes("");
+                  }}>
+                    {isZh ? "提交评审结果" : "Submit Decision"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 退出登录按钮（当不在具体审稿操作页时显示） */}
+          {!activeReview && (
+            <button className="bp bs" style={{ borderColor: "var(--text-ghost)", color: "var(--text-faint)" }} onClick={() => { signOut(); setPage("home"); }}>
+              {t.profile.logout}
+            </button>
+          )}
+          
           <div style={{ height: 80 }} />
         </div>
+        <Footer t={t} />
       </div>
     );
   }
