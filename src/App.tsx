@@ -523,7 +523,7 @@ export default function App() {
                 </a>
               </div>
               <iframe
-                src={`${a.pdf_url}#toolbar=0&navpanes=0`} 
+                src={`${a.pdf_url}#toolbar=0&navpanes=0&view=Fit`} 
                 style={{ width: "100%", height: "80vh", border: "1px solid var(--border)", background: "#fff" }}
                 title="PDF Viewer"
               />
