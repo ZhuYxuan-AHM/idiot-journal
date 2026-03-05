@@ -80,6 +80,8 @@ export const en = {
     submitNew: "+ New Submission", logout: "Sign Out",
     lvl: "Level", xp: "XP", nextLvl: "Next Level",
     badge_reviewer: "Reviewer", badge_author: "Author", badge_editor: "Editor", badge_reader: "Reader",
+    badge_associate_editor: "Assoc. Editor",
+    badge_editor_in_chief: "Editor-in-Chief",
     reviewsDone: "Reviews Completed", papersPublished: "Papers Published",
     levels: ["Curious Observer", "Skeptical Apprentice", "Ruozhi Analyst", "Senior Diagnostician", "Chief Absurdity Officer"],
   },
