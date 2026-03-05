@@ -67,7 +67,7 @@ export default function App() {
   const [profileMode, setProfileMode] = useState<"author" | "reviewer" | "editor">("author");
   const [activeReview, setActiveReview] = useState<any | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
-  const [reviewStatus, setReviewStatus] = useState<"accepted" | "rejected" | "revision">("revision");
+  const [reviewStatus, setReviewStatus] = useState<string>("revision");
   const [showPdf, setShowPdf] = useState(false);
 
   const t = useT(lang);
