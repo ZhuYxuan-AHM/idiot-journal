@@ -8,6 +8,7 @@ export type UserBadge = "reader" | "author" | "reviewer" | "editor";
 
 export interface Article {
   id: string;
+  idiot_id: string;
   vol: string;
   issue: string;
   featured: boolean;
@@ -22,6 +23,7 @@ export interface Article {
   keywords: string;
   model: string;
   status: ArticleStatus;
+  pdf_url: string;
   img: string;
   shares: number;
   comments: number;
