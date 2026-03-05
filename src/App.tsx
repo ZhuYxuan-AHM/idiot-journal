@@ -142,9 +142,9 @@ export default function App() {
             </div>
             {isZh ? (
   <span>• 接受PDF格式，最大20MB • 论文应包含标题、摘要、关键词、正文和参考文献或新闻出处<br /> 
-        • 正文格式参考<br />
+        • 正文格式参考(最少应包含下面四个章节) <br />
         第一章：实验背景与诱因 (Introduction & Incitement)<br />
-        核心逻辑： 解释为什么这个弱智行为值得研究。<br />
+        核心逻辑： 基于真实存在的行为，解释为什么这个弱智行为值得研究。<br />
         撰写要点：<br />
         媒体吹捧点： 引用一段媒体或厂商关于该模型此项能力的吹嘘。<br />
         预期表现： 按照跑分逻辑，AI 应该表现出的智能水平。<br />
@@ -166,12 +166,13 @@ export default function App() {
 提示词脆弱性： 尝试微调 Prompt（如改一个逗号），展示这种弱智行为是否具有顽固性。<br />
 跨模型验证： 同样的问题在 GPT-4, Claude, DeepSeek 上的不同失败表现。<br />
 <br />
-第四章：结论 (Synthetic Patch & Synthesis)<br />
+第四章：结论 (Conclusion)<br />
 核心逻辑： 针对这种弱智行为，我们是能治好它，还是只能埋了它。<br />
 撰写要点：<br />
-提示词补丁 (The Patch)： 给出能纠正该弱智行为的有效指令（如果有）。<br />
+（AI方向需补充）<br />
+提示词补丁： 给出能纠正该弱智行为的有效指令（如果有）。<br />
 边界定义： 明确该模型在这一特定领域的绝对禁区。<br />
-最终裁决： 针对该模型的真实能力给出一个反吹捧的量化评价。<br /> </span>
+最终裁决： 针对该模型的真实能力给出一个反吹捧的可量化评价。<br /> </span>
 ) : (
   <span>• PDF format only, max 20MB • Paper should include title, abstract, keywords, body, and references • Recommended: export from LaTeX or Word • The editorial team will review your manuscript after submission</span>
 )}
