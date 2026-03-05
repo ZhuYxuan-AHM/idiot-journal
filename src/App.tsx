@@ -716,16 +716,37 @@ export default function App() {
                     
                     <button className="bp" style={{ background: profileMode === "editor" ? "var(--gold)" : "#a78bfa", color: "var(--bg)", borderColor: "transparent" }} 
                       onClick={async () => {
-                        if (!supabase) return;
+                        if (!supabase || !user) return;
+                        
+                        let newStatus = reviewStatus;
+                        let newNotes = reviewNotes;
+
+                        // 【核心修复】如果是普通审稿人提交，只追加意见，不改变稿件的最终生死状态
+                        if (profileMode === "reviewer") {
+                          newStatus = "under_review"; // 强制保持在“审阅中”，等主编定夺
+                          
+                          // 翻译一下审稿人的建议，作为抬头
+                          const recMap: any = { accepted: "建议录用", rejected: "建议拒稿", revision: "建议修改", under_review: "审阅意见" };
+                          const recommendation = recMap[reviewStatus] || "审阅意见";
+                          
+                          // 把以前别人写的意见提取出来（如果有的话），追加自己的意见在后面
+                          const existingNotes = activeReview.reviewer_notes ? activeReview.reviewer_notes + "\n\n" : "";
+                          newNotes = existingNotes + `【${user.name} - ${recommendation}】\n${reviewNotes}`;
+                        }
+
                         const { error } = await supabase.from('submissions').update({
-                          status: reviewStatus,
-                          reviewer_notes: reviewNotes
+                          status: newStatus,
+                          reviewer_notes: newNotes
                         }).eq('id', activeReview.id);
 
                         if (error) {
                           alert("Error: " + error.message);
                         } else {
-                          alert(isZh ? `数据库更新成功！当前状态: ${reviewStatus}` : `Status updated in database: ${reviewStatus}`);
+                          if (profileMode === "reviewer") {
+                            alert(isZh ? `审阅意见已追加并推送给编辑部！` : `Review appended and sent to editorial board!`);
+                          } else {
+                            alert(isZh ? `编辑裁决已更新！当前状态: ${reviewStatus}` : `Status updated in database: ${reviewStatus}`);
+                          }
                           setActiveReview(null);
                           setShowPdf(false);
                           setReviewNotes("");
