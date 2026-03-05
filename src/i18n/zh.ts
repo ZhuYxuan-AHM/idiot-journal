@@ -78,6 +78,8 @@ export const zh = {
     submitNew: "+ 新投稿", logout: "退出登录",
     lvl: "等级", xp: "经验值", nextLvl: "下一级",
     badge_reviewer: "审稿人", badge_author: "作者", badge_editor: "编辑", badge_reader: "读者",
+    badge_associate_editor: "副主编", 
+    badge_editor_in_chief: "主编",
     reviewsDone: "完成审稿", papersPublished: "发表论文",
     levels: ["好奇观察者", "质疑学徒", "若智分析师", "高级诊断师", "首席荒谬官"],
   },
