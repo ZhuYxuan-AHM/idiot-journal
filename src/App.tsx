@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useT } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useArticles } from "@/hooks/useArticles";
 import { supabase, isLive } from "@/lib/supabase";
 import { DEMO_USER_PAPERS } from "@/lib/demo-data";
-import { TEMPLATE_EN, TEMPLATE_ZH } from "@/lib/templates";
 import { NavBar } from "@/components/layout/NavBar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/layout/AuthModal";
@@ -14,7 +13,6 @@ import { InteractiveRating } from "@/components/articles/InteractiveRating";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { LevelBar } from "@/components/profile/LevelBar";
-import { PaperPreview } from "@/components/preview/PaperPreview";
 import type { Lang, Article } from "@/lib/types";
 
 import "@/styles/global.css";
@@ -24,16 +22,19 @@ export default function App() {
   const [page, setPage] = useState("home");
   const [scrollY, setScrollY] = useState(0);
   const [authMode, setAuthMode] = useState<"login" | "register" | null>(null);
-  const [markdown, setMarkdown] = useState("");
-  const [copied, setCopied] = useState(false);
   const [submitMsg, setSubmitMsg] = useState("");
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+
+  // Submit form state
+  const [subForm, setSubForm] = useState({ title: "", authors: "", affiliation: "", abstract_en: "", abstract_zh: "", keywords: "", classification: "Human Bewilderment" });
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const t = useT(lang);
   const { user, signIn, signUp, signOut } = useAuth();
   const { articles, trackShare } = useArticles();
 
-  useEffect(() => { setMarkdown(lang === "en" ? TEMPLATE_EN : TEMPLATE_ZH); }, [lang]);
   useEffect(() => {
     const f = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", f, { passive: true });
@@ -41,32 +42,62 @@ export default function App() {
   }, []);
 
   const goTo = (id: string) => { setPage("home"); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 100); };
-  const handleCopy = () => { navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-  const handlePdf = () => window.print();
+
+  const CLASSIFICATIONS = [
+    "Human Bewilderment", "AI Absurdity", "Commercial Absurdism",
+    "Management Ruozhi", "Ruozhi Philosophy", "Data Delusion",
+    "UX Nightmares", "Policy Paradox",
+  ];
+
   const handleSubmitPaper = async () => {
-    if (!user) { setSubmitMsg(t.preview.loginFirst); return; }
-    if (!markdown.trim() || markdown.trim().length < 100) {
-      setSubmitMsg("Paper content is too short. Please write at least 100 characters.");
-      setTimeout(() => setSubmitMsg(""), 4000);
-      return;
-    }
-    if (isLive && supabase) {
-      const { error } = await supabase.from("submissions").insert({
-        user_id: user.id,
-        title: markdown.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 200) || "Untitled",
-        markdown,
-        classification: "Human Bewilderment",
-        status: "draft",
-      });
-      if (error) {
-        setSubmitMsg("Submission failed: " + error.message);
-        setTimeout(() => setSubmitMsg(""), 5000);
-        return;
+    if (!user) { setSubmitMsg(isZh ? "\u8bf7\u5148\u767b\u5f55" : "Please sign in first"); return; }
+    if (!subForm.title.trim()) { setSubmitMsg(isZh ? "\u8bf7\u586b\u5199\u6807\u9898" : "Title is required"); return; }
+    if (!subForm.authors.trim()) { setSubmitMsg(isZh ? "\u8bf7\u586b\u5199\u4f5c\u8005" : "Authors are required"); return; }
+    if (!subForm.abstract_en.trim()) { setSubmitMsg(isZh ? "\u8bf7\u586b\u5199\u6458\u8981" : "Abstract is required"); return; }
+    if (!pdfFile) { setSubmitMsg(isZh ? "\u8bf7\u4e0a\u4f20PDF\u6587\u4ef6" : "Please upload a PDF file"); return; }
+    if (pdfFile.type !== "application/pdf") { setSubmitMsg(isZh ? "\u53ea\u63a5\u53d7PDF\u683c\u5f0f" : "Only PDF files are accepted"); return; }
+    if (pdfFile.size > 20 * 1024 * 1024) { setSubmitMsg(isZh ? "\u6587\u4ef6\u4e0d\u80fd\u8d85\u8fc720MB" : "File must be under 20MB"); return; }
+
+    setSubmitting(true);
+    setSubmitMsg("");
+
+    try {
+      let pdf_url = "";
+      if (isLive && supabase) {
+        // Upload PDF to Supabase Storage
+        const fileName = `${Date.now()}-${pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+        const { error: uploadErr } = await supabase.storage.from("papers").upload(fileName, pdfFile, { contentType: "application/pdf" });
+        if (uploadErr) throw new Error("Upload failed: " + uploadErr.message);
+        const { data: urlData } = supabase.storage.from("papers").getPublicUrl(fileName);
+        pdf_url = urlData.publicUrl;
+
+        // Insert submission
+        const { error: insertErr } = await supabase.from("submissions").insert({
+          user_id: user.id,
+          title: subForm.title,
+          authors: subForm.authors,
+          affiliation: subForm.affiliation,
+          abstract_en: subForm.abstract_en,
+          abstract_zh: subForm.abstract_zh,
+          keywords: subForm.keywords,
+          classification: subForm.classification,
+          pdf_url,
+          status: "submitted",
+        });
+        if (insertErr) throw new Error("Submission failed: " + insertErr.message);
       }
+
+      setSubmitMsg(isZh ? "\u6295\u7a3f\u6210\u529f\uff01\u7f16\u8f91\u5c06\u5ba1\u6838\u60a8\u7684\u7a3f\u4ef6\u3002" : "Submitted successfully! The editorial team will review your manuscript.");
+      setSubForm({ title: "", authors: "", affiliation: "", abstract_en: "", abstract_zh: "", keywords: "", classification: "Human Bewilderment" });
+      setPdfFile(null);
+      if (fileRef.current) fileRef.current.value = "";
+    } catch (e: any) {
+      setSubmitMsg(e.message || "Submission failed");
     }
-    setSubmitMsg(t.preview.submitSuccess);
-    setTimeout(() => setSubmitMsg(""), 4000);
+    setSubmitting(false);
+    setTimeout(() => setSubmitMsg(""), 6000);
   };
+
   const handleLogin = async (email: string, password: string) => {
     const { error } = await signIn(email, password);
     return { error: error ? (typeof error === "string" ? error : (error as any).message ?? "Login failed") : null };
@@ -87,50 +118,111 @@ export default function App() {
   const others = articles.filter((a) => !a.featured);
   const isZh = lang === "zh";
 
-  /* ═══════════════ PREVIEW PAGE ═══════════════ */
+  /* ═══════════════ SUBMIT PAGE ═══════════════ */
   if (page === "preview") {
+    const inputStyle = { width: "100%", padding: "12px 16px", background: "#16161a", border: "1px solid var(--gold-dim)", color: "var(--text)", fontFamily: "var(--mono)", fontSize: 13, outline: "none" } as const;
+    const labelStyle = { fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-faint)", letterSpacing: 1, textTransform: "uppercase" as const, marginBottom: 6, display: "block" };
+    const isSuccess = submitMsg.includes("success") || submitMsg.includes("\u6210\u529f");
+
     return (
-      <div style={{ minHeight: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <div style={{ minHeight: "100vh" }}>
         <AuthModal t={t} mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onRegister={handleRegister} />
-        <div style={{ background: "rgba(10,10,12,0.98)", borderBottom: "1px solid var(--gold-dim)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, flexShrink: 0, flexWrap: "wrap", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--gold)", letterSpacing: 2, cursor: "pointer" }} onClick={() => setPage("home")}>{"\u2190"} I.D.I.O.T. {"\u82e5\u667a"}</span>
-            <span style={{ color: "var(--text-dead)" }}>|</span>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--text-muted)", letterSpacing: 1 }}>{t.preview.title}</span>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--gold)", border: "1px solid rgba(212,175,55,0.3)", padding: "2px 7px", letterSpacing: 1 }}>{t.preview.templateLabel}</span>
-          </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button className="bp bs" onClick={handleCopy}>{copied ? t.preview.copied : t.preview.btnCopy}</button>
-            <button className="bp bs" onClick={handlePdf}>{t.preview.btnPdf}</button>
-            <button className="bp bs" style={{ borderColor: "var(--text-ghost)", color: "var(--text-muted)" }} onClick={() => setMarkdown(lang === "en" ? TEMPLATE_EN : TEMPLATE_ZH)}>{t.preview.btnClear}</button>
-            <button className="bp bs" style={{ background: "var(--gold)", color: "var(--bg)", borderColor: "var(--gold)" }} onClick={handleSubmitPaper}>{t.preview.btnSubmit}</button>
-            {!user && <button className="bp bs" onClick={() => setAuthMode("login")}>{t.nav.login}</button>}
-            <LanguageToggle lang={lang} setLang={setLang} />
-          </div>
-        </div>
-        {submitMsg && (
-          <div style={{ padding: "10px 24px", fontSize: 12, fontFamily: "var(--mono)", color: submitMsg.includes("success") || submitMsg.includes("\u6210\u529f") ? "#4ade80" : "#ef4444", background: submitMsg.includes("success") || submitMsg.includes("\u6210\u529f") ? "rgba(74,222,128,0.08)" : "rgba(239,68,68,0.08)", borderBottom: "1px solid var(--border)" }}>
-            {submitMsg}
-          </div>
-        )}
-        <div style={{ padding: "6px 24px", fontSize: 11, color: "var(--text-faint)", fontFamily: "var(--mono)", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>{t.preview.desc}</div>
-        <div className="pg" style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 0 }}>
-          <div style={{ borderRight: "1px solid rgba(212,175,55,0.1)", display: "flex", flexDirection: "column", minHeight: 0 }}>
-            <div style={{ padding: "6px 20px", fontSize: 8, fontFamily: "var(--mono)", color: "var(--text-ghost)", letterSpacing: 2, textTransform: "uppercase", borderBottom: "1px solid var(--border)", flexShrink: 0, display: "flex", justifyContent: "space-between" }}>
-              <span>Markdown Editor</span><span style={{ color: "var(--text-dead)" }}>{markdown.length.toLocaleString()} chars</span>
+        <NavBar {...navProps} />
+        <div style={{ paddingTop: 80, maxWidth: 720, margin: "0 auto", padding: "80px 24px 0" }}>
+          <div className="gl" style={{ marginTop: 20 }} />
+          <h1 style={{ fontSize: 36, fontWeight: 300, marginBottom: 8 }}>{isZh ? "\u6295\u7a3f" : "Submit Manuscript"}</h1>
+          <p style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--text-faint)", marginBottom: 8, letterSpacing: 1 }}>
+            {isZh ? "\u4e0a\u4f20\u60a8\u7684\u7814\u7a76\u8bba\u6587\u81f3 I.D.I.O.T. \u82e5\u667a" : "Upload your research paper to I.D.I.O.T. \u82e5\u667a"}
+          </p>
+
+          {/* Format guidelines */}
+          <div style={{ background: "rgba(212,175,55,0.04)", border: "1px solid rgba(212,175,55,0.12)", padding: "20px 24px", marginBottom: 40, fontSize: 13, lineHeight: 1.8, color: "var(--text-faint)" }}>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--gold)", letterSpacing: 2, marginBottom: 10 }}>
+              {isZh ? "\u6295\u7a3f\u8981\u6c42" : "SUBMISSION GUIDELINES"}
             </div>
-            <textarea className="ea" value={markdown} onChange={(e) => setMarkdown(e.target.value)} spellCheck={false} />
+            {isZh ? (
+              <span>\u2022 \u63a5\u53d7PDF\u683c\u5f0f\uff0c\u6700\u592720MB \u2022 \u8bba\u6587\u5e94\u5305\u542b\u6807\u9898\u3001\u6458\u8981\u3001\u5173\u952e\u8bcd\u3001\u6b63\u6587\u548c\u53c2\u8003\u6587\u732e \u2022 \u63a8\u8350\u4f7f\u7528 LaTeX \u6216 Word \u5bfc\u51fa PDF \u2022 \u7f16\u8f91\u56e2\u961f\u5c06\u5728\u63d0\u4ea4\u540e\u5ba1\u6838\u60a8\u7684\u7a3f\u4ef6</span>
+            ) : (
+              <span>\u2022 PDF format only, max 20MB \u2022 Paper should include title, abstract, keywords, body, and references \u2022 Recommended: export from LaTeX or Word \u2022 The editorial team will review your manuscript after submission</span>
+            )}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
-            <div style={{ padding: "6px 20px", fontSize: 8, fontFamily: "var(--mono)", color: "var(--text-ghost)", letterSpacing: 2, textTransform: "uppercase", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>Journal Format Preview</div>
-            <div style={{ flex: 1, overflow: "auto", background: "#edecea" }}>
-              <div style={{ maxWidth: 660, margin: "16px auto", boxShadow: "0 1px 12px rgba(0,0,0,0.1)", borderRadius: 1 }}>
-                <PaperPreview markdown={markdown} />
+
+          {!user && (
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <p style={{ color: "var(--text-faint)", marginBottom: 16 }}>{isZh ? "\u8bf7\u5148\u767b\u5f55\u540e\u6295\u7a3f" : "Please sign in to submit"}</p>
+              <button className="bp" onClick={() => setAuthMode("login")}>{t.nav.login}</button>
+            </div>
+          )}
+
+          {user && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div>
+                <label style={labelStyle}>{isZh ? "\u8bba\u6587\u6807\u9898 *" : "Paper Title *"}</label>
+                <input style={inputStyle} value={subForm.title} onChange={(e) => setSubForm({ ...subForm, title: e.target.value })} placeholder={isZh ? "\u60a8\u7684\u8bba\u6587\u6807\u9898" : "Your paper title"} />
               </div>
-              <div style={{ height: 24 }} />
+              <div>
+                <label style={labelStyle}>{isZh ? "\u4f5c\u8005 *" : "Authors *"}</label>
+                <input style={inputStyle} value={subForm.authors} onChange={(e) => setSubForm({ ...subForm, authors: e.target.value })} placeholder="Jane Doe, John Smith" />
+              </div>
+              <div>
+                <label style={labelStyle}>{isZh ? "\u5355\u4f4d" : "Affiliation"}</label>
+                <input style={inputStyle} value={subForm.affiliation} onChange={(e) => setSubForm({ ...subForm, affiliation: e.target.value })} placeholder={isZh ? "\u60a8\u7684\u5355\u4f4d" : "University / Institute"} />
+              </div>
+              <div>
+                <label style={labelStyle}>{isZh ? "\u5206\u7c7b *" : "Classification *"}</label>
+                <select style={{ ...inputStyle, cursor: "pointer" }} value={subForm.classification} onChange={(e) => setSubForm({ ...subForm, classification: e.target.value })}>
+                  {CLASSIFICATIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>{isZh ? "\u82f1\u6587\u6458\u8981 *" : "Abstract (English) *"}</label>
+                <textarea style={{ ...inputStyle, minHeight: 120, resize: "vertical", fontFamily: "var(--serif)", lineHeight: 1.8 }} value={subForm.abstract_en} onChange={(e) => setSubForm({ ...subForm, abstract_en: e.target.value })} placeholder={isZh ? "\u82f1\u6587\u6458\u8981" : "Abstract in English"} />
+              </div>
+              <div>
+                <label style={labelStyle}>{isZh ? "\u4e2d\u6587\u6458\u8981" : "Abstract (Chinese, optional)"}</label>
+                <textarea style={{ ...inputStyle, minHeight: 100, resize: "vertical", fontFamily: "var(--serif-cn)", lineHeight: 1.8 }} value={subForm.abstract_zh} onChange={(e) => setSubForm({ ...subForm, abstract_zh: e.target.value })} placeholder={isZh ? "\u4e2d\u6587\u6458\u8981\uff08\u53ef\u9009\uff09" : "\u4e2d\u6587\u6458\u8981 (optional)"} />
+              </div>
+              <div>
+                <label style={labelStyle}>{isZh ? "\u5173\u952e\u8bcd" : "Keywords"}</label>
+                <input style={inputStyle} value={subForm.keywords} onChange={(e) => setSubForm({ ...subForm, keywords: e.target.value })} placeholder="keyword1, keyword2, keyword3" />
+              </div>
+              <div>
+                <label style={labelStyle}>{isZh ? "\u4e0a\u4f20PDF *" : "Upload PDF *"}</label>
+                <div style={{ border: "2px dashed var(--gold-dim)", padding: "32px 24px", textAlign: "center", cursor: "pointer", transition: "border-color 0.3s" }}
+                  onClick={() => fileRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--gold)"; }}
+                  onDragLeave={(e) => { e.currentTarget.style.borderColor = ""; }}
+                  onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = ""; const f = e.dataTransfer.files[0]; if (f?.type === "application/pdf") setPdfFile(f); }}>
+                  <input ref={fileRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) setPdfFile(f); }} />
+                  {pdfFile ? (
+                    <div>
+                      <div style={{ fontSize: 14, color: "var(--gold)", marginBottom: 4 }}>\u2713 {pdfFile.name}</div>
+                      <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{(pdfFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ fontSize: 24, color: "var(--text-ghost)", marginBottom: 8 }}>\u2191</div>
+                      <div style={{ fontSize: 13, color: "var(--text-faint)" }}>{isZh ? "\u70b9\u51fb\u6216\u62d6\u62fdPDF\u6587\u4ef6\u5230\u6b64\u5904" : "Click or drag PDF file here"}</div>
+                      <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginTop: 4 }}>PDF, max 20MB</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {submitMsg && (
+                <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: isSuccess ? "#4ade80" : "#ef4444", background: isSuccess ? "rgba(74,222,128,0.08)" : "rgba(239,68,68,0.08)", padding: "12px 16px", border: `1px solid ${isSuccess ? "rgba(74,222,128,0.2)" : "rgba(239,68,68,0.2)"}` }}>
+                  {submitMsg}
+                </div>
+              )}
+
+              <button className="bp" style={{ width: "100%", marginTop: 8, opacity: submitting ? 0.5 : 1 }} onClick={handleSubmitPaper} disabled={submitting}>
+                {submitting ? "..." : isZh ? "\u63d0\u4ea4\u7a3f\u4ef6" : "Submit Manuscript"}
+              </button>
             </div>
-          </div>
+          )}
+          <div style={{ height: 80 }} />
         </div>
+        <Footer t={t} />
       </div>
     );
   }
@@ -152,6 +244,7 @@ export default function App() {
           <div style={{ background: "rgba(212,175,55,0.04)", border: "1px solid rgba(212,175,55,0.15)", padding: "16px 24px", marginBottom: 40, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }} className="preprint-meta">
             <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--gold)", letterSpacing: 2 }}>I.D.I.O.T. PREPRINT</span>
+              {a.idiot_id && <span style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--gold)", fontWeight: 600 }}>{a.idiot_id}</span>}
               <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{t.articles.vol} {a.vol}, {t.articles.iss} {a.issue}</span>
               <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{a.date}</span>
             </div>
@@ -194,6 +287,25 @@ export default function App() {
           )}
 
           <div style={{ height: 1, background: "var(--border)", margin: "8px 0 32px" }} />
+
+          {/* PDF Viewer */}
+          {a.pdf_url && (
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase" }}>
+                  {isZh ? "\u5168\u6587" : "Full Paper"}
+                </div>
+                <a href={a.pdf_url} target="_blank" rel="noopener noreferrer" className="bp bs" style={{ textDecoration: "none" }}>
+                  {isZh ? "\u4e0b\u8f7dPDF" : "Download PDF"}
+                </a>
+              </div>
+              <iframe
+                src={a.pdf_url}
+                style={{ width: "100%", height: "80vh", border: "1px solid var(--border)", background: "#fff" }}
+                title="PDF Viewer"
+              />
+            </div>
+          )}
 
           <SocialBar article={a} t={t.articles} onShare={() => trackShare(a.id)} />
 
@@ -245,6 +357,7 @@ export default function App() {
                   <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)", whiteSpace: "nowrap" }}>{a.date}</div>
                 </div>
                 <h3 style={{ fontSize: 19, fontWeight: 500, lineHeight: 1.35, marginBottom: 8 }}>{isZh ? a.title_zh : a.title_en}</h3>
+                {a.idiot_id && <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", marginBottom: 6 }}>{a.idiot_id}</div>}
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 6 }}>{a.authors} {"\u2014"} <span style={{ fontStyle: "italic" }}>{a.affiliation}</span></div>
                 <p style={{ fontSize: 13.5, lineHeight: 1.7, color: "var(--text-faint)", maxWidth: 700 }}>{(isZh ? a.abstract_zh : a.abstract_en).slice(0, 200)}...</p>
                 <SocialBar article={a} t={t.articles} onShare={() => trackShare(a.id)} />
