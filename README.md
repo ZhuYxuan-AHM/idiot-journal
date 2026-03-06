@@ -1,4 +1,4 @@
-# I.D.I.O.T. 若智 学刊
+# I.D.I.O.T. 若智学刊
 
 **Interdisciplinary Discourse on Irrational Outcomes in Technology**
 *(技术中非理性结果的跨学科讨论)*
