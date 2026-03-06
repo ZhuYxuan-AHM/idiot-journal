@@ -92,7 +92,7 @@ export const zh = {
     loginFirst: "请先登录再提交。",
   },
   footer: {
-    tagline: "在愚行被习以为常之前，你有答案了吗？",
+    tagline: "在愚行被理所当然之前，你有答案了吗？",
     copy: "若智学刊 I.D.I.O.T. — 全部内容基于 CC BY 4.0",
   },
 };
