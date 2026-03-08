@@ -22,6 +22,33 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
   const [menuOpen, setMenuOpen] = useState(false);
   const isZh = lang === "zh";
 
+  // === 新增：滚动隐藏与显示逻辑 ===
+  const [isVisible, setIsVisible] = useState(true);
+  const [localScrollY, setLocalScrollY] = useState(0);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setLocalScrollY(currentScrollY);
+      
+      // 当向下滚动且超过导航栏高度时，隐藏导航栏
+      if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
+        setIsVisible(false);
+        setNotifOpen(false); // 隐藏时自动关闭通知面板，防止悬空
+      } 
+      // 当向上滚动时，重新显示导航栏
+      else if (currentScrollY < lastScrollY.current) {
+        setIsVisible(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // === 通知系统逻辑 ===
   const [notifOpen, setNotifOpen] = useState(false);
   const { user } = useAuth();
@@ -52,7 +79,9 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
     }
   };
 
-  const navBg = transparent && scrollY > 80
+  // 背景逻辑：结合传入的 scrollY 和本地监听的 localScrollY
+  const activeScrollY = scrollY || localScrollY;
+  const navBg = transparent && activeScrollY > 80
     ? { background: "rgba(10,10,12,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(212,175,55,0.15)" }
     : transparent
     ? { background: "transparent" }
@@ -142,7 +171,14 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
 
   return (
     <>
-      <nav style={{ position: transparent ? "fixed" : "relative", top: 0, left: 0, right: 0, zIndex: 100, transition: "all 0.4s", padding: "0 24px", ...navBg }}>
+      <nav style={{ 
+        position: transparent ? "fixed" : "sticky", // 使用 sticky 让它在普通页面也能吸顶
+        top: 0, left: 0, right: 0, zIndex: 100, 
+        transition: "transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s", 
+        transform: isVisible ? "translateY(0)" : "translateY(-100%)", // 核心控制显示隐藏的逻辑
+        padding: "0 24px", 
+        ...navBg 
+      }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={() => onNavigate("home")}>
             <span style={{ fontFamily: "var(--mono)", fontSize: 16, fontWeight: 500, color: "var(--gold)", letterSpacing: 4 }}>I.D.I.O.T.</span>
