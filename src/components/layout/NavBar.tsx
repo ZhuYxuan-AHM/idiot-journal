@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
 import type { Lang } from "@/lib/types";
 import type { T } from "@/i18n";
 
@@ -18,6 +20,25 @@ interface Props {
 
 export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, onNavigate, onScrollTo, onLogin, onLogout }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // === 新增：通知系统逻辑 ===
+  const [notifOpen, setNotifOpen] = useState(false);
+  const { user } = useAuth();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(user?.id);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const isZh = lang === "zh";
+
+  // 点击外部自动关闭通知下拉面板
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  // === 通知逻辑结束 ===
 
   const navBg = transparent && scrollY > 80
     ? { background: "rgba(10,10,12,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(212,175,55,0.15)" }
@@ -45,6 +66,55 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
       {userName && onLogout && (
         <a className="nl" style={{ fontSize: 10, color: "var(--text-ghost)" }} onClick={() => { onLogout(); setMenuOpen(false); }}>Logout</a>
       )}
+      
+      {/* === 新增：通知铃铛及下拉面板 === */}
+      {user && (
+        <div ref={notifRef} style={{ position: "relative", display: "flex", alignItems: "center" }}>
+          <button 
+            onClick={() => setNotifOpen(!notifOpen)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dim)", fontSize: 18, position: "relative", padding: "4px" }}
+            title={isZh ? "通知" : "Notifications"}
+          >
+            🔔
+            {unreadCount > 0 && (
+              <span style={{ position: "absolute", top: -2, right: -4, background: "#ef4444", color: "#fff", fontSize: 10, padding: "1px 5px", borderRadius: 10, fontFamily: "var(--mono)", fontWeight: "bold" }}>
+                {unreadCount}
+              </span>
+            )}
+          </button>
+          
+          {notifOpen && (
+            <div style={{ position: "absolute", top: 40, right: -10, width: 320, maxWidth: "85vw", background: "#111113", border: "1px solid var(--border)", boxShadow: "0 10px 30px rgba(0,0,0,0.8)", zIndex: 999, maxHeight: 400, overflowY: "auto", display: "flex", flexDirection: "column", borderRadius: 8 }}>
+              <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#111113", zIndex: 10 }}>
+                <span style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--gold)", fontWeight: "bold" }}>{isZh ? "消息通知" : "Notifications"}</span>
+                {unreadCount > 0 && (
+                  <button onClick={markAllAsRead} style={{ fontSize: 11, color: "var(--text-ghost)", background: "none", border: "1px solid var(--border)", borderRadius: 4, padding: "2px 6px", cursor: "pointer" }}>{isZh ? "全部已读" : "Mark all read"}</button>
+                )}
+              </div>
+              {notifications.length === 0 ? (
+                <div style={{ padding: 40, textAlign: "center", fontSize: 13, color: "var(--text-ghost)" }}>{isZh ? "暂无通知" : "No notifications yet"}</div>
+              ) : (
+                notifications.map(n => (
+                  <div key={n.id} onClick={() => markAsRead(n.id)} style={{ padding: "16px", borderBottom: "1px solid var(--border)", cursor: "pointer", background: n.is_read ? "transparent" : "rgba(212,175,55,0.08)", transition: "background 0.2s" }}>
+                    <div style={{ fontSize: 13, fontWeight: n.is_read ? 400 : 600, color: n.is_read ? "var(--text-dim)" : "var(--text)", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                      {n.type === 'announcement' ? '📢' : n.type === 'featured' ? '🌟' : '📝'}
+                      {isZh ? n.title_zh : n.title_en}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text-faint)", lineHeight: 1.5 }}>
+                      {isZh ? n.message_zh : n.message_en}
+                    </div>
+                    <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginTop: 8 }}>
+                      {new Date(n.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {/* === 通知铃铛结束 === */}
+
       <LanguageToggle lang={lang} setLang={setLang} />
     </>
   );
