@@ -18,17 +18,16 @@ interface Props {
   onLogout?: () => void;
 }
 
-export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, onNavigate, onScrollTo, onLogin, onLogout }: Props) {
+export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, onNavigate, onScrollTo, onLogin }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const isZh = lang === "zh";
 
-  // === 新增：通知系统逻辑 ===
+  // === 通知系统逻辑 ===
   const [notifOpen, setNotifOpen] = useState(false);
   const { user } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(user?.id);
   const notifRef = useRef<HTMLDivElement>(null);
-  const isZh = lang === "zh";
 
-  // 点击外部自动关闭通知下拉面板
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -38,7 +37,21 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  // === 通知逻辑结束 ===
+
+  // === 新增：搜索栏逻辑 ===
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      // 将搜索词写入 URL 并跳转到文章页
+      const url = new URL(window.location.href);
+      url.searchParams.set("view", "articles");
+      url.searchParams.set("q", searchQuery.trim());
+      window.history.pushState({}, '', url.toString());
+      onNavigate("articles");
+      setMenuOpen(false);
+    }
+  };
 
   const navBg = transparent && scrollY > 80
     ? { background: "rgba(10,10,12,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(212,175,55,0.15)" }
@@ -59,13 +72,25 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
       {navLink(t.nav.preview, () => onNavigate("preview"), true)}
       {navLink(t.nav.articles, () => onNavigate("articles"))}
       {navLink(t.nav.editorial, () => onScrollTo("editorial"))}
+      
+      {/* === 🔍 搜索栏 UI === */}
+      <div style={{ display: "flex", alignItems: "center", background: "rgba(212,175,55,0.05)", border: "1px solid var(--border)", padding: "6px 12px", borderRadius: 4, margin: "0 4px" }}>
+        <span style={{ fontSize: 12, color: "var(--text-ghost)", marginRight: 8 }}>🔍</span>
+        <input 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={handleSearch}
+          placeholder={isZh ? "搜索文章/作者..." : "Search..."}
+          style={{ background: "transparent", border: "none", color: "var(--text)", outline: "none", width: 140, fontFamily: "var(--mono)", fontSize: 12 }}
+        />
+      </div>
+
       {userName
         ? <a className="nl" onClick={() => { onNavigate("profile"); setMenuOpen(false); }} style={{ color: "var(--gold)" }}>{userName}</a>
         : <a className="nl" onClick={() => { onLogin(); setMenuOpen(false); }}>{t.nav.login}</a>
       }
-
       
-      {/* === 新增：通知铃铛及下拉面板 === */}
+      {/* 通知铃铛 */}
       {user && (
         <div ref={notifRef} style={{ position: "relative", display: "flex", alignItems: "center" }}>
           <button 
@@ -73,7 +98,7 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
             style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dim)", fontSize: 18, position: "relative", padding: "4px" }}
             title={isZh ? "通知" : "Notifications"}
           >
-            ✉️
+            🔔
             {unreadCount > 0 && (
               <span style={{ position: "absolute", top: -2, right: -4, background: "#ef4444", color: "#fff", fontSize: 10, padding: "1px 5px", borderRadius: 10, fontFamily: "var(--mono)", fontWeight: "bold" }}>
                 {unreadCount}
@@ -111,7 +136,6 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
           )}
         </div>
       )}
-      {/* === 通知铃铛结束 === */}
 
       <LanguageToggle lang={lang} setLang={setLang} />
     </>
@@ -126,17 +150,12 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
             <span style={{ fontFamily: "var(--serif-cn)", fontSize: 14, color: "var(--text-faint)" }}>{"\u82e5\u667a"}</span>
           </div>
 
-          {/* Desktop nav */}
           <div className="nav-desktop" style={{ display: "flex", alignItems: "center", gap: 20 }}>
             {links}
           </div>
 
-          {/* Mobile hamburger */}
           <button className="nav-hamburger" onClick={() => setMenuOpen(!menuOpen)}
-            style={{
-              display: "none", background: "none", border: "none", cursor: "pointer",
-              padding: 8, flexDirection: "column", gap: 5,
-            }}>
+            style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: 8, flexDirection: "column", gap: 5 }}>
             <span style={{ width: 22, height: 2, background: menuOpen ? "var(--gold)" : "var(--text-dim)", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
             <span style={{ width: 22, height: 2, background: "var(--text-dim)", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
             <span style={{ width: 22, height: 2, background: menuOpen ? "var(--gold)" : "var(--text-dim)", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
@@ -144,15 +163,9 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
         </div>
       </nav>
 
-      {/* Mobile menu overlay */}
       {menuOpen && (
         <div className="nav-mobile-menu" onClick={() => setMenuOpen(false)}
-          style={{
-            position: "fixed", top: 64, left: 0, right: 0, bottom: 0, zIndex: 99,
-            background: "rgba(10,10,12,0.98)", backdropFilter: "blur(12px)",
-            display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "flex-start", paddingTop: 40, gap: 24,
-          }}>
+          style={{ position: "fixed", top: 64, left: 0, right: 0, bottom: 0, zIndex: 99, background: "rgba(10,10,12,0.98)", backdropFilter: "blur(12px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", paddingTop: 40, gap: 24 }}>
           {links}
         </div>
       )}
