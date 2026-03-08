@@ -79,6 +79,9 @@ export default function App() {
   const [editPdf, setEditPdf] = useState<File | null>(null);
   const [isUpdatingArticle, setIsUpdatingArticle] = useState(false);
   const editFileRef = useRef<HTMLInputElement>(null);
+  // 公告功能的 State
+  const [isAnnouncing, setIsAnnouncing] = useState(false);
+  const [announceForm, setAnnounceForm] = useState({ title_en: "", title_zh: "", msg_en: "", msg_zh: "" });
   
   const t = useT(lang);
   const { user, signIn, signUp, signOut } = useAuth();
@@ -360,17 +363,34 @@ export default function App() {
           </a>
           
           {/* 主编专属：文章管理控制台 */}
+          {/* 主编专属：文章管理控制台 */}
           {user?.badge === "editor_in_chief" && (
             <>
-              <div style={{ marginBottom: isEditingArticle ? 16 : 32, padding: "16px 24px", background: "rgba(239, 68, 68, 0.05)", border: "1px dashed rgba(239, 68, 68, 0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+              {/* 注意这里的 marginBottom 条件加上了 isAnnouncing */}
+              <div style={{ marginBottom: isEditingArticle || isAnnouncing ? 16 : 32, padding: "16px 24px", background: "rgba(239, 68, 68, 0.05)", border: "1px dashed rgba(239, 68, 68, 0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
                 <div style={{ fontSize: 13, color: "#ef4444", fontFamily: "var(--mono)", fontWeight: 600, letterSpacing: 1 }}>
                   ⚡ {isZh ? "主编管理台 (EIC Console)" : "EIC Console"}
                 </div>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  
+                  {/* 👇新增的：发布公告按钮👇 */}
+                  <button 
+                    className="bp bs" 
+                    style={{ borderColor: "#a78bfa", color: "#a78bfa" }}
+                    onClick={() => { 
+                      setIsAnnouncing(!isAnnouncing); 
+                      setIsEditingArticle(false); // 展开公告时收起编辑面板
+                    }}
+                  >
+                     📢 {isZh ? "发布全站公告" : "Broadcast Announcement"}
+                  </button>
+                  {/* 👆新增结束👆 */}
+
                   <button 
                     className="bp bs" 
                     style={{ borderColor: "#ef4444", color: "#ef4444" }}
                     onClick={() => {
+                      setIsAnnouncing(false); // 展开编辑面板时收起公告
                       if (!isEditingArticle) {
                         // 展开时，自动填入当前文章的数据
                         setEditForm({
@@ -412,6 +432,38 @@ export default function App() {
                 </div>
               </div>
 
+              {/* 👇新增的：公告表单面板👇 */}
+              {isAnnouncing && (
+                <div style={{ background: "rgba(20, 20, 25, 0.9)", border: "1px solid #a78bfa", padding: "24px", marginBottom: 32, animation: "fadeIn 0.3s" }}>
+                  <h3 style={{ fontSize: 16, color: "#a78bfa", marginBottom: 16, fontFamily: "var(--mono)" }}>{isZh ? "发送全站系统公告" : "Send Global Announcement"}</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <input className="inp" placeholder={isZh ? "英文标题" : "Title (EN)"} value={announceForm.title_en} onChange={e => setAnnounceForm({...announceForm, title_en: e.target.value})} />
+                    <input className="inp" placeholder={isZh ? "中文标题" : "Title (ZH)"} value={announceForm.title_zh} onChange={e => setAnnounceForm({...announceForm, title_zh: e.target.value})} />
+                    <textarea className="ea" style={{ minHeight: 80, border: "1px solid var(--gold-dim)" }} placeholder={isZh ? "英文正文" : "Message (EN)"} value={announceForm.msg_en} onChange={e => setAnnounceForm({...announceForm, msg_en: e.target.value})} />
+                    <textarea className="ea" style={{ minHeight: 80, border: "1px solid var(--gold-dim)" }} placeholder={isZh ? "中文正文" : "Message (ZH)"} value={announceForm.msg_zh} onChange={e => setAnnounceForm({...announceForm, msg_zh: e.target.value})} />
+                    
+                    <button className="bp" style={{ background: "#a78bfa", color: "#fff", borderColor: "#a78bfa" }} 
+                      onClick={async () => {
+                        if (!supabase) return;
+                        if (!announceForm.title_en || !announceForm.title_zh) { alert(isZh ? "请填写双语标题" : "Please fill titles"); return; }
+                        const { error } = await supabase.rpc('broadcast_announcement', { 
+                          t_en: announceForm.title_en, t_zh: announceForm.title_zh, 
+                          m_en: announceForm.msg_en, m_zh: announceForm.msg_zh 
+                        });
+                        if (error) alert("Error: " + error.message);
+                        else {
+                          alert(isZh ? "✅ 全站公告已发送！" : "✅ Announcement broadcasted!");
+                          setAnnounceForm({ title_en: "", title_zh: "", msg_en: "", msg_zh: "" });
+                          setIsAnnouncing(false);
+                        }
+                      }}
+                    >
+                      {isZh ? "确认发送给所有人" : "Send to All Users"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            
               {/* 修改文章的隐藏表单 */}
               {isEditingArticle && (
                 <div style={{ background: "rgba(20, 20, 25, 0.9)", border: "1px solid var(--gold-dim)", padding: "24px", marginBottom: 32, animation: "fadeIn 0.3s" }}>
