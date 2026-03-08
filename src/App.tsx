@@ -59,19 +59,6 @@ export default function App() {
   const [submitMsg, setSubmitMsg] = useState("");
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [showPoster, setShowPoster] = useState(false);
-  // ==== 新增：轮播图状态 ====
-  const [currentSlide, setCurrentSlide] = useState(0);
-  // 获取排名前 5 的文章作为精选（优先拿有封面的）
-  const carouselArticles = articles.filter(a => a.featured).concat(articles.filter(a => !a.featured)).slice(0, 5);
-
-  // 自动轮播效果 (每 5 秒切换一次)
-  useEffect(() => {
-    if (carouselArticles.length === 0 || page !== "home") return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselArticles.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [carouselArticles.length, page]);
   
   // Submit form state
   const [subForm, setSubForm] = useState({ title: "", authors: "", affiliation: "", abstract_en: "", abstract_zh: "", keywords: "", classification: "Human Bewilderment" });
@@ -102,7 +89,19 @@ export default function App() {
   const { mySubmissions, allSubmissions, refetch: refetchSubs } = useSubmissions(user?.id, user?.badge);
   const { articles, trackShare } = useArticles();
   const { editors } = useEditors();
+  
+  // 轮播图状态 
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const carouselArticles = articles.filter(a => a.featured).concat(articles.filter(a => !a.featured)).slice(0, 5);
 
+  useEffect(() => {
+    if (carouselArticles.length === 0 || page !== "home") return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % carouselArticles.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [carouselArticles.length, page]);
+  
   // 自动解析分享链接
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
