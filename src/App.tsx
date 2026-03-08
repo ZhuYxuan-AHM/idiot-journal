@@ -59,7 +59,20 @@ export default function App() {
   const [submitMsg, setSubmitMsg] = useState("");
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [showPoster, setShowPoster] = useState(false);
+  // ==== 新增：轮播图状态 ====
+  const [currentSlide, setCurrentSlide] = useState(0);
+  // 获取排名前 5 的文章作为精选（优先拿有封面的）
+  const carouselArticles = articles.filter(a => a.featured).concat(articles.filter(a => !a.featured)).slice(0, 5);
 
+  // 自动轮播效果 (每 5 秒切换一次)
+  useEffect(() => {
+    if (carouselArticles.length === 0 || page !== "home") return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % carouselArticles.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [carouselArticles.length, page]);
+  
   // Submit form state
   const [subForm, setSubForm] = useState({ title: "", authors: "", affiliation: "", abstract_en: "", abstract_zh: "", keywords: "", classification: "Human Bewilderment" });
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -1149,19 +1162,91 @@ const { error: uploadErr } = await supabase.storage
         </div>
       </section>
 
-      {/* Manifesto */}
-      <section className="sec" style={{ background: "var(--bg-alt)" }}><div className="ctr"><div className="gl" />
-        <h2 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--text-faint)", textTransform: "uppercase", marginBottom: 60 }}>{t.manifesto.title}</h2>
-        <div style={{ maxWidth: 700 }}>
-          {t.manifesto.pts.map((p, i) => (
-            <div key={i} style={{ marginBottom: 32 }}>
-              <span style={{ color: "var(--text-faint)", fontStyle: "italic", fontSize: 22, lineHeight: 1.6 }}>{p.q}</span><br />
-              <span style={{ color: "var(--gold)", fontWeight: 600, fontSize: 22, lineHeight: 1.6 }}>{p.a}</span>
+      {/* Manifesto改为精选轮播图 */}
+      <section className="sec" style={{ background: "var(--bg-alt)", position: "relative" }}>
+        <div className="ctr">
+          <div className="gl" />
+          
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 40 }}>
+            <h2 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--text-faint)", textTransform: "uppercase", margin: 0 }}>
+              {isZh ? "往期精选" : "Featured Archives"}
+            </h2>
+            {/* 左右切换按钮 */}
+            {carouselArticles.length > 1 && (
+              <div style={{ display: "flex", gap: 12 }}>
+                <button className="bp bs" onClick={() => setCurrentSlide(s => (s === 0 ? carouselArticles.length - 1 : s - 1))} style={{ padding: "8px 12px" }}>←</button>
+                <button className="bp bs" onClick={() => setCurrentSlide(s => (s + 1) % carouselArticles.length)} style={{ padding: "8px 12px" }}>→</button>
+              </div>
+            )}
+          </div>
+
+          <div style={{ position: "relative", minHeight: 280 }}>
+            {carouselArticles.length > 0 ? carouselArticles.map((a, idx) => (
+              <div
+                key={a.id}
+                style={{
+                  position: currentSlide === idx ? "relative" : "absolute",
+                  top: 0, left: 0, width: "100%",
+                  opacity: currentSlide === idx ? 1 : 0,
+                  transform: currentSlide === idx ? "translateX(0)" : "translateX(20px)",
+                  pointerEvents: currentSlide === idx ? "auto" : "none",
+                  transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  padding: "40px 48px",
+                  cursor: "pointer",
+                  zIndex: currentSlide === idx ? 10 : 0
+                }}
+                className="article-card"
+                onClick={() => { setSelectedArticle(a); setPage("article-detail"); window.scrollTo({ top: 0 }); }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+                  <div style={{ display: "inline-block", background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.2)", padding: "2px 10px", fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1 }}>
+                    {a.classification}
+                  </div>
+                  <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)" }}>{a.date}</div>
+                </div>
+                
+                <h3 style={{ fontSize: 24, fontWeight: 500, lineHeight: 1.4, marginBottom: 12, color: "var(--text)" }}>
+                  {isZh ? (a.title_zh || a.title_en) : (a.title_en || a.title_zh)}
+                </h3>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>{a.authors} <span style={{ fontStyle: "italic", color: "var(--text-faint)" }}>— {a.affiliation}</span></div>
+                
+                <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-faint)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                  {isZh ? a.abstract_zh : a.abstract_en}
+                </p>
+                
+                <div style={{ marginTop: 24, fontSize: 12, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1, display: "flex", alignItems: "center", gap: 8 }}>
+                  {t.articles.readMore}
+                </div>
+              </div>
+            )) : (
+              <div style={{ padding: "60px 0", textAlign: "center", color: "var(--text-ghost)", border: "1px dashed var(--border)" }}>
+                {isZh ? "数据加载中..." : "Loading articles..."}
+              </div>
+            )}
+          </div>
+
+          {/* 底部进度指示点 */}
+          {carouselArticles.length > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 24 }}>
+              {carouselArticles.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentSlide(idx)}
+                  style={{
+                    width: currentSlide === idx ? 32 : 16, 
+                    height: 3, padding: 0,
+                    background: currentSlide === idx ? "var(--gold)" : "var(--border)",
+                    border: "none", cursor: "pointer", transition: "all 0.4s"
+                  }}
+                />
+              ))}
             </div>
-          ))}
-          <div style={{ marginTop: 56, fontSize: 48, fontWeight: 700, color: "var(--gold)", letterSpacing: 4 }}>{t.manifesto.end}</div>
+          )}
         </div>
-      </div></section><div className="dv" />
+      </section>
+      <div className="dv" />
 
       {/* About */}
       <section className="sec" id="about"><div className="ctr"><div className="gl" />
