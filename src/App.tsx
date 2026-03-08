@@ -638,38 +638,74 @@ const { error: uploadErr } = await supabase.storage
     );
   }
 
-  /* ═══════════════ ARTICLES PAGE ═══════════════ */
+/* ═══════════════ ARTICLES PAGE ═══════════════ */
   if (page === "articles") {
+    // 1. 实时获取 URL 中的搜索关键词
+    const searchParams = new URLSearchParams(window.location.search);
+    const q = (searchParams.get("q") || "").toLowerCase();
+
+    // 2. 过滤文章：支持搜中英标题、作者、机构
+    const filteredArticles = articles.filter(a => 
+      !q || 
+      (a.title_en || "").toLowerCase().includes(q) || 
+      (a.title_zh || "").toLowerCase().includes(q) || 
+      (a.authors || "").toLowerCase().includes(q) ||
+      (a.affiliation || "").toLowerCase().includes(q)
+    );
+
+    // 3. 区分显示逻辑：
+    // - 如果没有搜索词，正常显示封面文章 (featured) 和 最新列表 (others)
+    // - 如果有搜索词，取消封面大图展示，把所有匹配结果平铺显示
+    const displayFeatured = !q ? filteredArticles.find((a) => a.featured) : null;
+    const displayOthers = q ? filteredArticles : filteredArticles.filter((a) => !a.featured);
+
     return (
       <div style={{ minHeight: "100vh" }}>
         <AuthModal t={t} mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onRegister={handleRegister} />
         <NavBar {...navProps} />
         <div style={{ paddingTop: 80 }} className="ctr">
           <div className="gl" style={{ marginTop: 40 }} />
-          <h1 style={{ fontSize: 42, fontWeight: 300, marginBottom: 8 }}>{t.articles.title}</h1>
-          <p style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--text-faint)", marginBottom: 48, letterSpacing: 1 }}>{t.articles.coverNote}</p>
+          
+          {/* 标题区：如果有搜索词，显示“Search Results”，否则显示“Articles” */}
+          <h1 style={{ fontSize: 42, fontWeight: 300, marginBottom: 8 }}>
+            {q ? (isZh ? `搜索结果: "${searchParams.get("q")}"` : `Search Results for "${searchParams.get("q")}"`) : t.articles.title}
+          </h1>
+          <p style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--text-faint)", marginBottom: 48, letterSpacing: 1 }}>
+            {q ? (isZh ? `共找到 ${filteredArticles.length} 篇相关文章` : `Found ${filteredArticles.length} related articles`) : t.articles.coverNote}
+          </p>
 
-          {featured && (
-            <div style={{ border: "1px solid rgba(212,175,55,0.2)", background: "rgba(212,175,55,0.03)", marginBottom: 48, cursor: "pointer", overflow: "hidden" }} onClick={() => { setSelectedArticle(featured); setPage("article-detail"); window.scrollTo({ top: 0 }); }}>
+          {/* 封面文章（仅在非搜索状态下显示） */}
+          {displayFeatured && (
+            <div style={{ border: "1px solid rgba(212,175,55,0.2)", background: "rgba(212,175,55,0.03)", marginBottom: 48, cursor: "pointer", overflow: "hidden" }} onClick={() => { setSelectedArticle(displayFeatured); setPage("article-detail"); window.scrollTo({ top: 0 }); }}>
               <div style={{ padding: "32px 44px 40px" }}>
                 <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{t.articles.featured}</div>
-                <div style={{ display: "inline-block", background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", padding: "2px 10px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1, marginBottom: 12 }}>{featured.classification}</div>
-                <h2 style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.35, marginBottom: 10 }}>{isZh ? (featured.title_zh || featured.title_en) : (featured.title_en || featured.title_zh)}</h2>
-                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>{featured.authors} {"\u2014"} {featured.affiliation}</div>
-                <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-faint)", marginBottom: 16, textAlign: "justify" }}>{isZh ? featured.abstract_zh : featured.abstract_en}</p>
+                <div style={{ display: "inline-block", background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)", padding: "2px 10px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1, marginBottom: 12 }}>{displayFeatured.classification}</div>
+                <h2 style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.35, marginBottom: 10 }}>{isZh ? (displayFeatured.title_zh || displayFeatured.title_en) : (displayFeatured.title_en || displayFeatured.title_zh)}</h2>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>{displayFeatured.authors} {"\u2014"} {displayFeatured.affiliation}</div>
+                <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-faint)", marginBottom: 16, textAlign: "justify" }}>{isZh ? displayFeatured.abstract_zh : displayFeatured.abstract_en}</p>
                 <div style={{ display: "flex", gap: 24, fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-ghost)", marginBottom: 4 }}>
-                  {featured.model !== "N/A" && <span>{t.articles.model}: {featured.model}</span>}
-                  <span>{t.articles.vol} {featured.vol}, {t.articles.iss} {featured.issue}</span>
-                  <span>{featured.date}</span>
+                  {displayFeatured.model !== "N/A" && <span>{t.articles.model}: {displayFeatured.model}</span>}
+                  <span>{t.articles.vol} {displayFeatured.vol}, {t.articles.iss} {displayFeatured.issue}</span>
+                  <span>{displayFeatured.date}</span>
                 </div>
-                <SocialBar article={featured} t={t.articles} onShare={() => trackShare(featured.id)} />
+                <SocialBar article={displayFeatured} t={t.articles} onShare={() => trackShare(displayFeatured.id)} />
               </div>
             </div>
           )}
 
-          <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--text-faint)", textTransform: "uppercase", marginBottom: 24 }}>{t.articles.latest}</h3>
+          {/* 列表区域头部提示词 */}
+          {!q && <h3 style={{ fontSize: 14, fontFamily: "var(--mono)", letterSpacing: 3, color: "var(--text-faint)", textTransform: "uppercase", marginBottom: 24 }}>{t.articles.latest}</h3>}
+          
           <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 80 }}>
-            {others.map((a) => (
+            {/* 搜索为空的占位提示 */}
+            {q && displayOthers.length === 0 && (
+              <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-ghost)", border: "1px dashed var(--border)" }}>
+                {isZh ? "未找到符合条件的文章，请尝试其他关键词。" : "No articles match your search. Try different keywords."}
+              </div>
+            )}
+
+            {/* 列表渲染 */}
+            {displayOthers.map((a) => (
               <div key={a.id} className="article-card" style={{ padding: "24px 28px" }} onClick={() => { setSelectedArticle(a); setPage("article-detail"); window.scrollTo({ top: 0 }); }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
                   <div style={{ display: "inline-block", background: "var(--surface)", border: "1px solid var(--border)", padding: "2px 8px", fontSize: 9, fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: 1 }}>{a.classification}</div>
