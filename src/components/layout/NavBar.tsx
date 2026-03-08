@@ -38,12 +38,11 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // === 新增：搜索栏逻辑 ===
+  // === 搜索栏逻辑 ===
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && searchQuery.trim()) {
-      // 将搜索词写入 URL 并跳转到文章页
       const url = new URL(window.location.href);
       url.searchParams.set("view", "articles");
       url.searchParams.set("q", searchQuery.trim());
@@ -66,7 +65,7 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
 
   const links = (
     <>
-      {/* === 🔍 搜索栏 UI (已移动到最前面) === */}
+      {/* 🔍 搜索栏 UI */}
       <div style={{ display: "flex", alignItems: "center", background: "rgba(212,175,55,0.05)", border: "1px solid var(--border)", padding: "6px 12px", borderRadius: 4, marginRight: 8 }}>
         <span style={{ fontSize: 12, color: "var(--text-ghost)", marginRight: 8 }}>🔍</span>
         <input 
@@ -90,7 +89,7 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
         : <a className="nl" onClick={() => { onLogin(); setMenuOpen(false); }}>{t.nav.login}</a>
       }
       
-      {/* 通知铃铛 */}
+      {/* 🔔 通知铃铛 */}
       {user && (
         <div ref={notifRef} style={{ position: "relative", display: "flex", alignItems: "center" }}>
           <button 
@@ -136,9 +135,7 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
           )}
         </div>
       )}
-    </>
-  );
-  
+
       <LanguageToggle lang={lang} setLang={setLang} />
     </>
   );
