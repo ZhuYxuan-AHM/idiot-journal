@@ -75,7 +75,7 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
             style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dim)", fontSize: 18, position: "relative", padding: "4px" }}
             title={isZh ? "通知" : "Notifications"}
           >
-            🔔
+            ✉️
             {unreadCount > 0 && (
               <span style={{ position: "absolute", top: -2, right: -4, background: "#ef4444", color: "#fff", fontSize: 10, padding: "1px 5px", borderRadius: 10, fontFamily: "var(--mono)", fontWeight: "bold" }}>
                 {unreadCount}
