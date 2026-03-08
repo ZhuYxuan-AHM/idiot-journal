@@ -127,3 +127,15 @@ export interface DbProfile {
   reviews_completed: number;
   created_at: string;
 }
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: "status" | "featured" | "announcement";
+  title_en: string;
+  title_zh: string;
+  message_en: string;
+  message_zh: string;
+  is_read: boolean;
+  created_at: string;
+}
