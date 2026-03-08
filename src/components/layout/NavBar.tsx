@@ -66,15 +66,8 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
 
   const links = (
     <>
-      {([["about", t.nav.about], ["scope", t.nav.scope], ["submit", t.nav.submit]] as const).map(([id, l]) => (
-        <a key={id} className="nl" onClick={() => { onScrollTo(id); setMenuOpen(false); }}>{l}</a>
-      ))}
-      {navLink(t.nav.preview, () => onNavigate("preview"), true)}
-      {navLink(t.nav.articles, () => onNavigate("articles"))}
-      {navLink(t.nav.editorial, () => onScrollTo("editorial"))}
-      
-      {/* === 🔍 搜索栏 UI === */}
-      <div style={{ display: "flex", alignItems: "center", background: "rgba(212,175,55,0.05)", border: "1px solid var(--border)", padding: "6px 12px", borderRadius: 4, margin: "0 4px" }}>
+      {/* === 🔍 搜索栏 UI (已移动到最前面) === */}
+      <div style={{ display: "flex", alignItems: "center", background: "rgba(212,175,55,0.05)", border: "1px solid var(--border)", padding: "6px 12px", borderRadius: 4, marginRight: 8 }}>
         <span style={{ fontSize: 12, color: "var(--text-ghost)", marginRight: 8 }}>🔍</span>
         <input 
           value={searchQuery}
@@ -85,6 +78,13 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
         />
       </div>
 
+      {([["about", t.nav.about], ["scope", t.nav.scope], ["submit", t.nav.submit]] as const).map(([id, l]) => (
+        <a key={id} className="nl" onClick={() => { onScrollTo(id); setMenuOpen(false); }}>{l}</a>
+      ))}
+      {navLink(t.nav.preview, () => onNavigate("preview"), true)}
+      {navLink(t.nav.articles, () => onNavigate("articles"))}
+      {navLink(t.nav.editorial, () => onScrollTo("editorial"))}
+      
       {userName
         ? <a className="nl" onClick={() => { onNavigate("profile"); setMenuOpen(false); }} style={{ color: "var(--gold)" }}>{userName}</a>
         : <a className="nl" onClick={() => { onLogin(); setMenuOpen(false); }}>{t.nav.login}</a>
@@ -136,7 +136,9 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
           )}
         </div>
       )}
-
+    </>
+  );
+  
       <LanguageToggle lang={lang} setLang={setLang} />
     </>
   );
