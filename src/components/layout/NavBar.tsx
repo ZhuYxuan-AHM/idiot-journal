@@ -63,9 +63,7 @@ export function NavBar({ t, lang, setLang, transparent, scrollY = 0, userName, o
         ? <a className="nl" onClick={() => { onNavigate("profile"); setMenuOpen(false); }} style={{ color: "var(--gold)" }}>{userName}</a>
         : <a className="nl" onClick={() => { onLogin(); setMenuOpen(false); }}>{t.nav.login}</a>
       }
-      {userName && onLogout && (
-        <a className="nl" style={{ fontSize: 10, color: "var(--text-ghost)" }} onClick={() => { onLogout(); setMenuOpen(false); }}>Logout</a>
-      )}
+
       
       {/* === 新增：通知铃铛及下拉面板 === */}
       {user && (
