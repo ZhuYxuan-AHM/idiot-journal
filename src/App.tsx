@@ -1247,23 +1247,6 @@ const { error: uploadErr } = await supabase.storage
       </section>
       <div className="dv" />
 
-      {/* About */}
-      <section className="sec" id="about"><div className="ctr"><div className="gl" />
-        <h2 style={{ fontSize: 38, fontWeight: 300, marginBottom: 48, lineHeight: 1.3 }}>{t.about.title}</h2>
-        <div className="sg" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60 }}>
-          <div>
-            <p style={{ fontSize: 17, lineHeight: 2, color: "var(--text-dim)", marginBottom: 24 }}>{t.about.t1}</p>
-            <p style={{ fontSize: 17, lineHeight: 2, color: "var(--text-dim)", marginBottom: 24 }}>{t.about.t2}</p>
-            <p style={{ fontSize: 17, lineHeight: 2, color: "var(--text-dim)" }}>{t.about.t3}</p>
-          </div>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <blockquote style={{ borderLeft: "2px solid var(--gold)", paddingLeft: 32, fontSize: 24, fontStyle: "italic", color: "var(--gold)", lineHeight: 1.6, fontWeight: 300, animation: "pulseGlow 4s infinite" }}>
-              {"\u201c"}{t.about.highlight}{"\u201d"}
-            </blockquote>
-          </div>
-        </div>
-      </div></section><div className="dv" />
-
       {/* Scope */}
       <section className="sec" id="scope" style={{ background: "var(--bg-alt)" }}><div className="ctr"><div className="gl" />
         <h2 style={{ fontSize: 38, fontWeight: 300, marginBottom: 20, lineHeight: 1.3 }}>{t.scope.title}</h2>
@@ -1339,7 +1322,24 @@ const { error: uploadErr } = await supabase.storage
 
         <a href="yuxuanzhu83@gmail.com" className="bp">{t.editorial.cta}</a>
       </div></section>
-
+      
+      {/* About */}
+      <section className="sec" id="about"><div className="ctr"><div className="gl" />
+        <h2 style={{ fontSize: 38, fontWeight: 300, marginBottom: 48, lineHeight: 1.3 }}>{t.about.title}</h2>
+        <div className="sg" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60 }}>
+          <div>
+            <p style={{ fontSize: 17, lineHeight: 2, color: "var(--text-dim)", marginBottom: 24 }}>{t.about.t1}</p>
+            <p style={{ fontSize: 17, lineHeight: 2, color: "var(--text-dim)", marginBottom: 24 }}>{t.about.t2}</p>
+            <p style={{ fontSize: 17, lineHeight: 2, color: "var(--text-dim)" }}>{t.about.t3}</p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <blockquote style={{ borderLeft: "2px solid var(--gold)", paddingLeft: 32, fontSize: 24, fontStyle: "italic", color: "var(--gold)", lineHeight: 1.6, fontWeight: 300, animation: "pulseGlow 4s infinite" }}>
+              {"\u201c"}{t.about.highlight}{"\u201d"}
+            </blockquote>
+          </div>
+        </div>
+      </div></section><div className="dv" />
+      
       <Footer t={t} />
     </div>
   );
