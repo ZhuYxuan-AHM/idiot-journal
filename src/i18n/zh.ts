@@ -33,7 +33,7 @@ export const zh = {
     t1: "I.D.I.O.T. 采用滚动投稿模式，实行严格的双盲同行评审。请使用我们的强制模板和在线预览工具。",
     details: ["接受格式：LaTeX、Word、Markdown", "遵循强制性四章+附录模板", "引文遵循 APA 第7版", "全文最多12,000字"],
     free: "免收文章处理费 (APC)", access: "所有内容在 CC BY 4.0 下开放",
-    note: "滚动投稿 · 双盲评审 · 60天内回复",
+    note: "滚动投稿 · 双盲评审 · 6天内回复",
     btnOnline: "打开投稿工具", btnTemplate: "下载模板",
   },
   editorial: {
