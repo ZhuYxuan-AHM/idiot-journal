@@ -85,7 +85,7 @@ export default function App() {
   
   const t = useT(lang);
   const isZh = lang === "zh";
-  const { user, signIn, signUp, signOut } = useAuth();
+  const { user, signIn, signUp, signOut, refreshUser } = useAuth();
   // 获取真实稿件数据
   const { mySubmissions, allSubmissions, refetch: refetchSubs } = useSubmissions(user?.id, user?.badge);
   const { articles, trackShare } = useArticles();
@@ -217,7 +217,7 @@ export default function App() {
         });
         if (insertErr) throw new Error("Submission failed: " + insertErr.message);
       }
-
+        if (refreshUser) refreshUser();
       setSubmitMsg(isZh ? "\u6295\u7a3f\u6210\u529f\uff01\u7f16\u8f91\u5c06\u5ba1\u6838\u60a8\u7684\u7a3f\u4ef6\u3002" : "Submitted successfully! The editorial team will review your manuscript.");
       setSubForm({ title: "", authors: "", affiliation: "", abstract_en: "", abstract_zh: "", keywords: "", classification: "Human Bewilderment" });
       setPdfFile(null);
