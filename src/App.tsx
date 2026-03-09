@@ -84,6 +84,7 @@ export default function App() {
   const [announceForm, setAnnounceForm] = useState({ title_en: "", title_zh: "", msg_en: "", msg_zh: "" });
   
   const t = useT(lang);
+  const isZh = lang === "zh";
   const { user, signIn, signUp, signOut } = useAuth();
   // 获取真实稿件数据
   const { mySubmissions, allSubmissions, refetch: refetchSubs } = useSubmissions(user?.id, user?.badge);
@@ -237,7 +238,6 @@ export default function App() {
 
   const featured = articles.find((a) => a.featured);
   const others = articles.filter((a) => !a.featured);
-  const isZh = lang === "zh";
 
   /* ═══════════════ SUBMIT PAGE ═══════════════ */
   if (page === "preview") {
