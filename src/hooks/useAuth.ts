@@ -79,6 +79,16 @@ export function useAuth() {
     if (isLive && supabase) await supabase.auth.signOut();
     setUser(null);
   }, []);
+  
+  // 新增：主动刷新用户信息的函数 
+  const refreshUser = async () => {
+    if (!supabase) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+      if (data) setUser(data);
+    }
+  };
 
-  return { user, loading, signIn, signUp, signOut };
+  return { user, loading, signIn, signUp, signOut, refreshUser }; 
 }
