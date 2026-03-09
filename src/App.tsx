@@ -1284,7 +1284,7 @@ const { error: uploadErr } = await supabase.storage
       {/* ════════ 新增：风云榜单模块 (背景色：黑) ════════ */}
       <section className="sec" id="leaderboard"><div className="ctr"><div className="gl" />
         <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 40 }}>
-          <h2 style={{ fontSize: 38, fontWeight: 300, lineHeight: 1.3 }}>{isZh ? "学术风云榜" : "Leaderboard"}</h2>
+          <h2 style={{ fontSize: 38, fontWeight: 300, lineHeight: 1.3 }}>{isZh ? "贡献榜" : "Leaderboard"}</h2>
           <span style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1 }}>{isZh ? "本周动态" : "WEEKLY TRENDS"}</span>
         </div>
         
@@ -1293,7 +1293,7 @@ const { error: uploadErr } = await supabase.storage
           {/* 1. 活跃作者榜 */}
           <div style={{ background: "rgba(212,175,55,0.03)", border: "1px solid rgba(212,175,55,0.15)", padding: "32px 24px" }}>
             <h3 style={{ fontSize: 16, fontFamily: "var(--mono)", color: "var(--gold)", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
-              🏆 {isZh ? "活跃作者" : "Top Authors"}
+              🏆 {isZh ? "作者贡献" : "Top Authors"}
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {topAuthors.map(([name, count], idx) => (
