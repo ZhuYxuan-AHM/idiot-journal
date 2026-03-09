@@ -116,12 +116,21 @@ export default function App() {
     return { topAuthors: sortedAuthors, topAffiliations: sortedAffiliations };
   }, [articles]);
 
-  // 读者排行占位数据 (后续可以通过数据库 RPC 真实拉取全站积分最高的用户)
-  const topReaders = [
-    { name: "Mystic Reviewer", score: 1250, desc: isZh ? "参与评议 12 次" : "12 Peer Reviews" },
-    { name: "Dr. NullPointer", score: 840, desc: isZh ? "点赞分享 34 次" : "34 Shares & Likes" },
-    { name: "Alice Wonderland", score: 620, desc: isZh ? "发表评论 18 次" : "18 Comments" }
-  ];
+  // 读者排行拉取逻辑 
+  const [topReaders, setTopReaders] = useState<{name: string, xp: number, reviews: number}[]>([]);
+
+  useEffect(() => {
+    const fetchTopReaders = async () => {
+      if (!supabase) return;
+      // 调用我们在 Supabase 中写的 RPC 函数
+      const { data, error } = await supabase.rpc('get_top_readers', { limit_count: 3 });
+      if (data && !error) {
+        setTopReaders(data);
+      }
+    };
+    fetchTopReaders();
+  }, []);
+  
   
   const { editors } = useEditors();
   
@@ -1335,17 +1344,22 @@ const { error: uploadErr } = await supabase.storage
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {topReaders.map((reader, idx) => (
-                <div key={reader.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--border)", paddingBottom: 12 }}>
+                <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--border)", paddingBottom: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 18, fontFamily: "var(--mono)", color: idx === 0 ? "#4ade80" : "var(--text-ghost)", fontWeight: 600 }}>0{idx + 1}</span>
                     <div>
                       <div style={{ fontSize: 15, color: "var(--text-dim)", fontWeight: 500 }}>{reader.name}</div>
-                      <div style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 2 }}>{reader.desc}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 2 }}>
+                        {/* 动态显示其真实行为数据 */}
+                        {isZh ? "累计经验" : "Total"} {reader.xp} XP
+                        {reader.reviews > 0 && (isZh ? ` · 评议 ${reader.reviews} 次` : ` · ${reader.reviews} Reviews`)}
+                      </div>
                     </div>
                   </div>
-                  <span style={{ fontSize: 13, fontFamily: "var(--mono)", color: "#4ade80", fontWeight: 600 }}>{reader.score}</span>
+                  <span style={{ fontSize: 13, fontFamily: "var(--mono)", color: "#4ade80", fontWeight: 600 }}>{reader.xp}</span>
                 </div>
               ))}
+              {topReaders.length === 0 && <div style={{ fontSize: 13, color: "var(--text-ghost)" }}>{isZh ? "暂无数据" : "No data yet"}</div>}
             </div>
           </div>
 
