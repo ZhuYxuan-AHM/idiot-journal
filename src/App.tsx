@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useT } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useArticles } from "@/hooks/useArticles";
@@ -88,6 +88,40 @@ export default function App() {
   // 获取真实稿件数据
   const { mySubmissions, allSubmissions, refetch: refetchSubs } = useSubmissions(user?.id, user?.badge);
   const { articles, trackShare } = useArticles();
+  // 👇==== 新增：榜单数据统计算法 ====👇
+  const { topAuthors, topAffiliations } = useMemo(() => {
+    const aCounts: Record<string, number> = {};
+    const affCounts: Record<string, number> = {};
+
+    articles.forEach(a => {
+      // 1. 统计作者 (假设作者是用逗号分隔的，比如 "张三, 李四")
+      if (a.authors) {
+        a.authors.split(/[,，]/).forEach(author => {
+          const name = author.trim();
+          if (name) aCounts[name] = (aCounts[name] || 0) + 1;
+        });
+      }
+      // 2. 统计机构
+      if (a.affiliation) {
+        const aff = a.affiliation.trim();
+        if (aff) affCounts[aff] = (affCounts[aff] || 0) + 1;
+      }
+    });
+
+    // 排序并取前 10 名
+    const sortedAuthors = Object.entries(aCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const sortedAffiliations = Object.entries(affCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+    return { topAuthors: sortedAuthors, topAffiliations: sortedAffiliations };
+  }, [articles]);
+
+  // 读者排行占位数据 (后续可以通过数据库 RPC 真实拉取全站积分最高的用户)
+  const topReaders = [
+    { name: "Mystic Reviewer", score: 1250, desc: isZh ? "参与评议 12 次" : "12 Peer Reviews" },
+    { name: "Dr. NullPointer", score: 840, desc: isZh ? "点赞分享 34 次" : "34 Shares & Likes" },
+    { name: "Alice Wonderland", score: 620, desc: isZh ? "发表评论 18 次" : "18 Comments" }
+  ];
+  
   const { editors } = useEditors();
   
   // 轮播图状态 
@@ -1247,6 +1281,77 @@ const { error: uploadErr } = await supabase.storage
       </section>
       <div className="dv" />
 
+      {/* ════════ 新增：风云榜单模块 (背景色：黑) ════════ */}
+      <section className="sec" id="leaderboard"><div className="ctr"><div className="gl" />
+        <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 40 }}>
+          <h2 style={{ fontSize: 38, fontWeight: 300, lineHeight: 1.3 }}>{isZh ? "学术风云榜" : "Leaderboard"}</h2>
+          <span style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--gold)", letterSpacing: 1 }}>{isZh ? "本周动态" : "WEEKLY TRENDS"}</span>
+        </div>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 32 }}>
+          
+          {/* 1. 活跃作者榜 */}
+          <div style={{ background: "rgba(212,175,55,0.03)", border: "1px solid rgba(212,175,55,0.15)", padding: "32px 24px" }}>
+            <h3 style={{ fontSize: 16, fontFamily: "var(--mono)", color: "var(--gold)", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
+              🏆 {isZh ? "活跃作者" : "Top Authors"}
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {topAuthors.map(([name, count], idx) => (
+                <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--border)", paddingBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 18, fontFamily: "var(--mono)", color: idx === 0 ? "var(--gold)" : "var(--text-ghost)", fontWeight: 600 }}>0{idx + 1}</span>
+                    <span style={{ fontSize: 15, color: "var(--text-dim)", fontWeight: 500 }}>{name}</span>
+                  </div>
+                  <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-faint)" }}>{count} {isZh ? "篇" : "Papers"}</span>
+                </div>
+              ))}
+              {topAuthors.length === 0 && <div style={{ fontSize: 13, color: "var(--text-ghost)" }}>{isZh ? "暂无数据" : "No data yet"}</div>}
+            </div>
+          </div>
+
+          {/* 2. 瞩目机构榜 */}
+          <div style={{ background: "rgba(167,139,250,0.03)", border: "1px solid rgba(167,139,250,0.15)", padding: "32px 24px" }}>
+            <h3 style={{ fontSize: 16, fontFamily: "var(--mono)", color: "#a78bfa", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
+              🏛️ {isZh ? "瞩目机构" : "Top Institutions"}
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {topAffiliations.map(([name, count], idx) => (
+                <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--border)", paddingBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 18, fontFamily: "var(--mono)", color: idx === 0 ? "#a78bfa" : "var(--text-ghost)", fontWeight: 600 }}>0{idx + 1}</span>
+                    <span style={{ fontSize: 14, color: "var(--text-dim)", fontWeight: 500, maxWidth: 160, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={name}>{name}</span>
+                  </div>
+                  <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-faint)" }}>{count} {isZh ? "篇" : "Papers"}</span>
+                </div>
+              ))}
+              {topAffiliations.length === 0 && <div style={{ fontSize: 13, color: "var(--text-ghost)" }}>{isZh ? "暂无数据" : "No data yet"}</div>}
+            </div>
+          </div>
+
+          {/* 3. 明星读者榜 */}
+          <div style={{ background: "rgba(74,222,128,0.03)", border: "1px solid rgba(74,222,128,0.15)", padding: "32px 24px" }}>
+            <h3 style={{ fontSize: 16, fontFamily: "var(--mono)", color: "#4ade80", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
+              🌟 {isZh ? "明星读者" : "Top Readers"}
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {topReaders.map((reader, idx) => (
+                <div key={reader.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--border)", paddingBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 18, fontFamily: "var(--mono)", color: idx === 0 ? "#4ade80" : "var(--text-ghost)", fontWeight: 600 }}>0{idx + 1}</span>
+                    <div>
+                      <div style={{ fontSize: 15, color: "var(--text-dim)", fontWeight: 500 }}>{reader.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 2 }}>{reader.desc}</div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 13, fontFamily: "var(--mono)", color: "#4ade80", fontWeight: 600 }}>{reader.score}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div></section><div className="dv" />
+      
       {/* Scope */}
       <section className="sec" id="scope" style={{ background: "var(--bg-alt)" }}><div className="ctr"><div className="gl" />
         <h2 style={{ fontSize: 38, fontWeight: 300, marginBottom: 20, lineHeight: 1.3 }}>{t.scope.title}</h2>
