@@ -418,7 +418,6 @@ export default function App() {
           </a>
           
           {/* 主编专属：文章管理控制台 */}
-          {/* 主编专属：文章管理控制台 */}
           {user?.badge === "editor_in_chief" && (
             <>
               {/* 注意这里的 marginBottom 条件加上了 isAnnouncing */}
@@ -1076,6 +1075,7 @@ const { error: uploadErr } = await supabase.storage
                           setShowPdf(false);
                           setReviewNotes("");
                           refetchSubs(); // 刷新列表
+                          if (refreshUser) refreshUser();
                         }
                     }}>
                       {profileMode === "editor" ? (isZh ? "更新至数据库" : "Update Database") : (isZh ? "提交评审至数据库" : "Submit Recommendation")}
