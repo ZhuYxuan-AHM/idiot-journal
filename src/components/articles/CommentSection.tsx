@@ -92,7 +92,18 @@ export function CommentSection({ articleId, user, t, onLoginRequired }: Props) {
             )}
           </div>
         </div>
-        <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text-dim)", margin: 0 }}>{c.content}</p>
+        <p 
+  style={{ 
+    fontSize: 14, 
+    lineHeight: 1.6, 
+    color: "var(--text-dim)", 
+    margin: 0,
+    whiteSpace: "pre-wrap",   // 👈 核心：保留换行符并自动换行
+    wordBreak: "break-word"   // 👈 可选：防止极长的连续字符（如超长链接）撑破容器
+  }}
+>
+  {c.content}
+</p>
         
         {/* 递归渲染回复部分 */}
         {comments.filter(reply => reply.parent_id === c.id).map(reply => renderComment(reply, true))}
