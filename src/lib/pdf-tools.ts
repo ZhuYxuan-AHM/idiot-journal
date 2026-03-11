@@ -71,7 +71,7 @@ export async function stampPdf(pdfUrl: string, idiotId: string, vol: string, iss
 
     if (isFirstPage) {
       // ────────── 首页：完整版页眉 ──────────
-      const topMargin = 75;
+      const topMargin = 45;
       const logoSize = 40;
       const logoX = 50;
       const logoY = height - topMargin;
