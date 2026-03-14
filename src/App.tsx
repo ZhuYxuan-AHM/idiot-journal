@@ -578,9 +578,11 @@ const { error: uploadErr } = await supabase.storage
     upsert: true // 👈 关键：如果文件已存在，直接覆盖
   });
       
-    if (uploadErr) throw uploadErr;
-    const { data: urlData } = supabase.storage.from("papers").getPublicUrl(finalPath);
-    finalPdfUrl = urlData.publicUrl;
+if (uploadErr) throw uploadErr;
+const { data: urlData } = supabase.storage.from("papers").getPublicUrl(finalPath);
+
+// 👇 加上时间戳参数，强制浏览器刷新缓存
+finalPdfUrl = `${urlData.publicUrl}?t=${Date.now()}`;
   }
 
                           // 2. 更新文章数据库
